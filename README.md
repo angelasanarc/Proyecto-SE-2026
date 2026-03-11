@@ -1,76 +1,121 @@
 # Proyecto de Aula – Seguidor de Línea Tipo Velocista con ESP32
 
 ## Introducción
-En el auge de la cuarta revolución industrial, los sistemas embebidos forman parte fundamental de numerosos dispositivos tecnológicos que facilitan el día a día, salvan vidas y aportan al desarrollo global. Un sistema embebido es un dispositivo diseñado para realizar una o pocas funciones específicas, generalmente dentro de un sistema electrónico o mecánico de mayor tamaño. Los microcontroladores se utilizan como el componente central de estos sistemas, ya que integran en un solo circuito las diferentes partes que lo componen. Éstos son capaces de recibir información, procesarla mediante algoritmos programados y generar señales de control para actuadores como luces o motores. Por la capacidad de percibir su entorno, tomar decisiones basadas en esa información y ejecutar acciones sin intervención humana, los microcontroladores son ideales para controlar sistemas autónomos. 
 
-Un ejemplo de este tipo de aplicación es el carrito seguidor de línea, objeto de este proyecto, en el cual un microcontrolador procesa la información proveniente de sensores que detectan una línea marcada en el suelo, y a partir de esta entrada, controla la velocidad y dirección de los motores para mantener la trayectoria establecida. De esta forma, el sistema embebido permite que el carrito se desplace de manera autónoma al mismo tiempo que es capaz de comunicarse con el usuario para brindar información sobre su estado. Los robots de navegación autónoma tienen diversas aplicaciones en diferentes campos, por lo que resulta pertinente diseñar un sistema embebido encargado de la integración entre sensores, procesamiento y actuadores sin intervención humana. 
+En el auge de la cuarta revolución industrial, los sistemas embebidos forman parte fundamental de numerosos dispositivos tecnológicos que facilitan el día a día, salvan vidas y aportan al desarrollo global. Un sistema embebido es un dispositivo diseñado para realizar una o pocas funciones específicas, generalmente dentro de un sistema electrónico o mecánico de mayor tamaño. Los microcontroladores se utilizan como el componente central de estos sistemas, ya que integran en un solo circuito las diferentes partes que lo componen. Éstos son capaces de recibir información, procesarla mediante algoritmos programados y generar señales de control para actuadores como luces o motores.
 
+Por la capacidad de percibir su entorno, tomar decisiones basadas en esa información y ejecutar acciones sin intervención humana, los microcontroladores son ideales para controlar sistemas autónomos.
+
+Un ejemplo de este tipo de aplicación es el carrito seguidor de línea, objeto de este proyecto, en el cual un microcontrolador procesa la información proveniente de sensores que detectan una línea marcada en el suelo, y a partir de esta entrada, controla la velocidad y dirección de los motores para mantener la trayectoria establecida. De esta forma, el sistema embebido permite que el carrito se desplace de manera autónoma al mismo tiempo que es capaz de comunicarse con el usuario para brindar información sobre su estado. Los robots de navegación autónoma tienen diversas aplicaciones en diferentes campos, por lo que resulta pertinente diseñar un sistema embebido encargado de la integración entre sensores, procesamiento y actuadores sin intervención humana.
 
 ## Objetivos
 
 ### Objetivo general
-Diseñar e implementar un sistema embebido basado en una ESP32 para controlar un robot seguidor de línea tipo velocista, capaz de detectar una trayectoria marcada sobre una pista y seguirla de manera autónoma, rápida y estable mediante el uso de sensores, procesamiento en tiempo real y control de actuadores.
+Diseñar e implementar un sistema embebido basado en una ESP32 para controlar un robot seguidor de línea tipo velocista, capaz de detectar y seguir de manera autónoma una trayectoria marcada sobre una pista, manteniendo estabilidad, rapidez de respuesta y precisión en el movimiento.
 
 ### Objetivos específicos
-- Diseñar la arquitectura general del sistema, integrando sensado, procesamiento, actuación, comunicación y monitoreo.
-- Seleccionar e implementar los sensores necesarios para detectar la línea y estimar la posición relativa del robot respecto a la trayectoria.
-- Desarrollar el firmware en la ESP32 para la adquisición de datos, procesamiento de señales y control del movimiento del robot.
-- Implementar el control de los motores mediante una lógica que permita corregir la trayectoria con rapidez y estabilidad.
-- Incorporar mecanismos de manejo de errores y eventos críticos, como pérdida de línea, lecturas inválidas o fallas en la operación.
-- Diseñar un sistema de comunicación y visualización del estado del robot para facilitar la depuración, configuración y seguimiento de variables del sistema.
-- Construir e integrar el prototipo físico, validando su funcionamiento sobre una pista de prueba.
-- Verificar el cumplimiento de los requisitos del proyecto mediante pruebas funcionales, documentación técnica y trazabilidad.
+- Diseñar la arquitectura general del sistema, integrando sensado, procesamiento, actuación, comunicación y visualización.
+- Seleccionar e integrar los componentes electrónicos y mecánicos necesarios para el funcionamiento del robot.
+- Implementar el sistema de detección de línea mediante sensores reflectivos QTR-8RC.
+- Desarrollar el firmware en la ESP32 para la lectura de sensores, el procesamiento de datos y el control del robot en tiempo real.
+- Controlar los motores mediante el driver TB6612 para corregir la trayectoria de forma rápida y estable.
+- Incorporar un sistema de encendido e inicio de operación mediante control láser.
+- Implementar una pantalla OLED para la visualización del estado del sistema y variables relevantes.
+- Incorporar mecanismos de manejo de errores ante eventos como pérdida de línea, lecturas inconsistentes o fallas de operación.
+- Alimentar el sistema con una batería LiPo de 300 mAh y 7.4 V que permita la operación autónoma del prototipo.
+- Validar experimentalmente el desempeño del robot sobre una pista de prueba.
+- Documentar el diseño, integración y resultados del proyecto en el repositorio.
 
 ## Asignación de roles
 
-### Technical Lead
+### Líder técnico (Technical Lead)
 **Responsable:** Angela Sanchez  
-Encargada de liderar el desarrollo técnico del proyecto, definir la arquitectura general del sistema, coordinar la integración entre hardware y firmware, tomar decisiones de diseño y supervisar el cumplimiento de los objetivos planteados.
+Encargada de liderar el desarrollo técnico del proyecto, definir la arquitectura general del sistema, coordinar al equipo de trabajo y supervisar la integración final entre hardware y firmware.
 
-### Hardware Integration Engineer
+### Ingeniero de integración de hardware (Hardware Integration Engineer)
 **Responsable:** Simon Patiño  
-Encargado del diseño e integración física del sistema, selección e interconexión de componentes electrónicos, montaje del circuito, ensamblaje del chasis y validación del funcionamiento del hardware del prototipo.
+Encargado del diseño e integración física del sistema, interconexión de componentes electrónicos, ensamblaje del hardware, montaje del prototipo y validación del funcionamiento eléctrico y mecánico.
 
-### Firmware Engineer
+### Ingeniera de firmware (Firmware Engineer)
 **Responsable:** Laura Maya  
-Encargada del desarrollo del firmware en la ESP32, implementación de la lógica de control, adquisición y procesamiento de datos de sensores, manejo de actuadores, comunicaciones y estructura del software embebido.
+Encargada del desarrollo del firmware en la ESP32, implementación de la lógica de control, adquisición y procesamiento de señales de sensores, control de actuadores, lectura del sistema de inicio por láser y organización del software embebido.
 
-### Verification & Testing Engineer
+### Ingeniero de verificación y pruebas (Verification & Testing Engineer)
 **Responsable:** Jeronimo Zapata  
-Encargado de diseñar y ejecutar el plan de pruebas, verificar el cumplimiento de los requisitos funcionales y no funcionales, documentar resultados, gestionar evidencias de validación y apoyar la construcción de la matriz de trazabilidad.
+Encargado del diseño y ejecución del plan de pruebas, verificación del cumplimiento de requisitos, recolección de evidencias experimentales y apoyo en la construcción de la matriz de trazabilidad y validación.
 
 ## Descripción detallada del problema que se desea trabajar
 
-El problema central que se desea abordar en este proyecto es el desarrollo de un robot seguidor de línea tipo velocista controlado por una ESP32, capaz de desplazarse de manera autónoma sobre una pista marcada, manteniendo una trayectoria estable aun cuando se presenten curvas, cambios bruscos de dirección o pequeñas perturbaciones durante el recorrido. A diferencia de un seguidor de línea convencional, el objetivo de un robot velocista no es únicamente detectar una línea y moverse sobre ella, sino hacerlo con un mayor nivel de rapidez, precisión y capacidad de respuesta, lo que convierte el problema en un reto de integración entre sensado, procesamiento y control en tiempo real.
+El problema central que se desea abordar en este proyecto es el desarrollo de un robot seguidor de línea tipo velocista controlado por una ESP32, capaz de desplazarse de forma autónoma sobre una pista marcada, manteniendo una trayectoria estable y corrigiendo su movimiento en tiempo real. A diferencia de un seguidor de línea convencional, este sistema no solo debe detectar la línea y permanecer sobre ella, sino hacerlo con mayor velocidad, precisión y capacidad de respuesta frente a curvas, cambios de dirección y perturbaciones durante el recorrido.
 
-El desafío principal radica en que el sistema debe interpretar continuamente la información proveniente de sensores ubicados en la parte inferior del robot para determinar la posición relativa de la línea respecto al chasis. A partir de esta información, la ESP32 debe ejecutar una lógica de control que ajuste de forma inmediata la velocidad de los motores y la dirección de avance, evitando que el robot se desvíe o abandone la pista. Este proceso debe realizarse en tiempos muy cortos, ya que cualquier retraso en la lectura, procesamiento o actuación puede traducirse en errores de trayectoria, oscilaciones excesivas o pérdida total de la línea.
+El sistema integrará una **ESP32** como unidad principal de procesamiento, un arreglo de sensores **QTR-8RC** para la detección de la línea, un driver de motores **TB6612** para el accionamiento de los actuadores, una batería **LiPo de 300 mAh, 7.4 V, 2S, 2.22 Wh** como fuente de alimentación, **motorreductores Pololu 10:1** como sistema de tracción, un **control láser de inicio/parada** para habilitar la operación del robot y una **pantalla OLED I2C** para la visualización del estado del sistema.
 
-Desde el punto de vista técnico, este problema permite desarrollar un sistema embebido completo y coherente con los lineamientos del curso. En primer lugar, el proyecto incorpora **sensado físico real**, ya que la detección de la línea dependerá de sensores ópticos o infrarrojos capaces de identificar contrastes entre la superficie de la pista y la trayectoria marcada. Esto garantiza que el sistema reciba información del entorno en tiempo real y tome decisiones basadas en variables físicas medibles.
+El desafío técnico radica en que el robot debe interpretar continuamente la información captada por los sensores QTR-8RC para estimar la posición relativa de la línea respecto al chasis. Con base en esta información, la ESP32 debe procesar los datos y generar señales de control hacia el TB6612, el cual accionará los motorreductores Pololu para corregir la trayectoria. Este proceso debe ejecutarse en tiempos muy cortos, ya que cualquier retraso en la lectura, procesamiento o actuación puede provocar oscilaciones, pérdida de estabilidad o salida de la pista.
 
-En segundo lugar, el proyecto incluye **actuación electrónica real**, ya que el robot deberá controlar motores de corriente continua mediante señales de mando generadas por la ESP32 y acondicionadas por una etapa de potencia. La respuesta del sistema no será fija ni manual, sino dependiente de una lógica embebida que relacione directamente las lecturas de los sensores con la acción de los motores. En consecuencia, el proyecto no solo detecta información del entorno, sino que responde activamente a ella de manera autónoma.
+Adicionalmente, el sistema incorporará un mecanismo de control externo mediante láser para habilitar o detener la operación del robot de forma controlada antes de la carrera o durante pruebas. Esta característica permite mejorar la seguridad, facilitar el arranque sincronizado y adaptar el sistema a dinámicas de competencia o validación experimental.
 
-Asimismo, el problema exige una **arquitectura de firmware organizada**, debido a que no basta con programar una secuencia simple de instrucciones. El sistema deberá estructurarse en módulos claramente definidos, como adquisición de sensores, procesamiento de señales, generación de acciones de control, comunicaciones, registro de eventos y manejo de errores. Esta organización es importante para asegurar mantenibilidad, escalabilidad y claridad en el diseño del software embebido.
+Por otra parte, la pantalla OLED permitirá visualizar información relevante del robot en tiempo real, como el estado general del sistema, modo de operación, confirmación de inicio, errores detectados, nivel de batería o variables básicas de depuración. Esto mejora la interacción con el usuario y facilita tanto la fase de pruebas como la supervisión del funcionamiento del prototipo.
 
-Otro aspecto relevante es el **manejo de errores y condiciones de falla**. En un robot seguidor de línea pueden presentarse múltiples situaciones anómalas, como lecturas inconsistentes, pérdida de referencia de la línea, ruido en las señales, caída de tensión o fallos de comunicación. Por esta razón, el sistema debe ser capaz de detectar estas situaciones y responder de forma segura, por ejemplo, reduciendo velocidad, corrigiendo trayectoria, generando alertas o deteniendo el robot si es necesario. Esto fortalece el proyecto desde la perspectiva de robustez y confiabilidad.
+Este problema es pertinente dentro del contexto de sistemas embebidos porque exige la integración coordinada de varios elementos de hardware y software. En primer lugar, el proyecto involucra **sensado físico real**, dado que los sensores QTR-8RC permiten detectar el contraste entre la línea y la superficie de la pista. En segundo lugar, requiere **actuación electrónica real**, ya que la ESP32 debe controlar de forma dinámica la velocidad y dirección de los motores a través del TB6612. Finalmente, el sistema necesita una **lógica de control en tiempo real**, capaz de traducir señales de entrada en acciones correctivas inmediatas.
 
-Además, este trabajo justifica la implementación de un **sistema de logging o registro de eventos**, ya que durante el funcionamiento del robot resulta útil almacenar o transmitir información sobre estados relevantes, como inicio de operación, pérdida de línea, cambios de modo, errores de lectura, maniobras correctivas y variables críticas del sistema. Este registro será clave tanto para la depuración como para la validación experimental del prototipo.
+Adicionalmente, el desarrollo del proyecto exige una estructura de firmware organizada en módulos funcionales, tales como lectura de sensores, cálculo de posición, generación de acciones de control, lectura del módulo de inicio, visualización en pantalla, manejo de errores, monitoreo y comunicación. De esta manera, el robot no se limita a ejecutar una secuencia simple de instrucciones, sino que constituye una solución embebida completa y técnicamente justificada.
 
-El proyecto también permite integrar **protocolos de comunicación**, necesarios para depuración, monitoreo o interacción con periféricos. Estas comunicaciones pueden emplearse para transmitir datos de sensores, parámetros de control, estados internos o mensajes de error hacia una interfaz externa. Esto aporta valor técnico al proyecto al ampliar la visibilidad del sistema y facilitar su ajuste durante las etapas de prueba.
+Otro aspecto importante del problema es la necesidad de contemplar condiciones de falla. Durante la operación del robot pueden presentarse eventos como pérdida de línea, lecturas inconsistentes, ruido en los sensores, variaciones en la tensión de la batería o respuestas inadecuadas de los motores. Por esta razón, el sistema debe incluir mecanismos que permitan detectar estas anomalías y responder de manera segura, por ejemplo reduciendo la velocidad, corrigiendo de manera más agresiva la trayectoria o deteniendo el robot si es necesario.
 
-Adicionalmente, se contempla la posibilidad de implementar una **interfaz de usuario** que permita visualizar información del estado del robot y modificar ciertos parámetros de operación, como velocidad base, sensibilidad o modo de funcionamiento. Esto enriquece la experiencia de uso y aporta un componente de interacción que va más allá del simple desplazamiento autónomo.
+Asimismo, el proyecto permite incorporar monitoreo y registro de eventos, ya que durante las pruebas será fundamental observar variables relevantes del sistema, como lecturas de sensores, estados de operación, comportamiento de los motores y posibles errores. Esto facilitará la depuración, el ajuste del control y la validación experimental del prototipo.
 
-En términos de ingeniería aplicada, este problema es significativo porque reúne elementos de electrónica, programación, control automático y diseño mecatrónico dentro de un solo sistema funcional. El desarrollo del robot implica seleccionar componentes adecuados, diseñar una estrategia de control eficiente, integrar correctamente las conexiones físicas y validar el desempeño del conjunto en un entorno real de operación.
+En conjunto, el problema propuesto representa una aplicación completa de sistemas embebidos, al integrar percepción del entorno, procesamiento local, toma de decisiones, visualización de información y actuación autónoma. Además, su desarrollo tiene valor académico y práctico, pues reproduce un escenario real de automatización móvil donde un sistema debe reaccionar en tiempo real ante información captada del entorno.
 
-En síntesis, el problema que se desea trabajar consiste en diseñar e implementar un robot seguidor de línea tipo velocista basado en ESP32, capaz de sensar una trayectoria, procesar información en tiempo real y controlar su movimiento de manera autónoma, estable y rápida. Al mismo tiempo, el proyecto permite justificar y materializar los principales requerimientos de un sistema embebido académico: sensado físico, actuación electrónica, lógica de control, manejo de errores, comunicaciones, monitoreo, validación y documentación técnica.
+## Justificación del cumplimiento de los requisitos del proyecto
+
+El desarrollo de este robot seguidor de línea permite satisfacer de manera clara los requerimientos fundamentales del proyecto:
+
+- **Uso de sistema embebido:** la ESP32 actúa como unidad central de procesamiento, ejecutando la lógica de control y coordinando todas las funciones del sistema.
+- **Integración de sensor físico:** el robot emplea un arreglo de sensores QTR-8RC para detectar la línea y obtener información del entorno en tiempo real.
+- **Integración de actuador:** los motorreductores Pololu 10:1 son controlados electrónicamente mediante el driver TB6612, de acuerdo con las decisiones generadas por el firmware.
+- **Procesamiento en firmware:** la lógica del sistema se implementa en la ESP32 para leer sensores, procesar datos y generar acciones correctivas sobre los motores.
+- **Manejo de errores:** el sistema contempla situaciones como pérdida de línea, lecturas inválidas, ruido en sensores o caídas en la alimentación.
+- **Comunicación y monitoreo:** se podrán implementar mecanismos de comunicación serial para depuración, monitoreo y visualización de variables del sistema.
+- **Interfaz de visualización:** la pantalla OLED permitirá mostrar estados del robot, errores y variables importantes durante la operación.
+- **Inicio y parada controlados:** el uso del control láser permitirá activar o desactivar la operación del robot de forma controlada y segura.
+- **Registro de eventos:** se podrán registrar estados relevantes del robot durante su operación, como inicio, error, pérdida de línea y condiciones anómalas.
+- **Validación experimental:** el prototipo será probado sobre una pista real para verificar su desempeño y cumplimiento de los objetivos planteados.
+- **Documentación técnica:** el proyecto incluye organización del repositorio, descripción de arquitectura, pruebas y evidencias del desarrollo.
 
 ## Alcance del proyecto
 
-El alcance de este proyecto comprende el diseño, desarrollo, integración y validación de un robot seguidor de línea tipo velocista controlado por una ESP32, orientado al seguimiento autónomo de una trayectoria marcada sobre una pista de prueba. El sistema será concebido como un prototipo funcional capaz de captar información del entorno, procesarla en tiempo real y ejecutar acciones correctivas sobre sus actuadores para mantener un desplazamiento estable y eficiente.
+El alcance de este proyecto comprende el diseño, desarrollo, integración y validación de un robot seguidor de línea tipo velocista basado en una ESP32, orientado al seguimiento autónomo de una trayectoria marcada sobre una pista de prueba. El sistema será concebido como un prototipo funcional capaz de captar información del entorno, procesarla en tiempo real y ejecutar acciones correctivas sobre sus actuadores para mantener un desplazamiento estable y eficiente.
 
-Dentro del alcance del proyecto se incluye el diseño de la arquitectura general del sistema embebido, la selección de los componentes principales, la integración de sensores para detección de línea, el acondicionamiento y control de motores, la implementación del firmware en la ESP32 y la definición de la lógica de navegación sobre pista. También forma parte del alcance la incorporación de mecanismos de manejo de errores, el registro de eventos relevantes del sistema, la comunicación para monitoreo y depuración, y el desarrollo de una forma básica de interacción con el usuario para consulta del estado del robot o ajuste de parámetros principales.
+Dentro del alcance del proyecto se incluye la integración de un arreglo de sensores **QTR-8RC** para la detección de línea, el uso de un driver **TB6612** para el control de potencia de los motores, la implementación de **motorreductores Pololu 10:1** como sistema de tracción, el uso de una batería **LiPo de 300 mAh, 7.4 V, 2S, 2.22 Wh** como fuente de alimentación, la incorporación de un **control láser** para el encendido o habilitación del robot y la integración de una **pantalla OLED I2C** para la visualización de estados y variables del sistema.
 
-Desde el punto de vista físico, el alcance incluye la construcción del prototipo, el ensamblaje del sistema electrónico, la integración sobre el chasis y la validación del funcionamiento global mediante pruebas experimentales en una pista controlada. Igualmente, se contempla la elaboración de la documentación técnica del proyecto, incluyendo descripción del sistema, organización del desarrollo, evidencia de pruebas y trazabilidad de requisitos.
+También se incluye el desarrollo del firmware en la ESP32, la definición de la lógica de navegación sobre pista, el manejo de errores, el monitoreo del estado del sistema y la validación del funcionamiento mediante pruebas experimentales.
 
-El prototipo final deberá ser capaz de seguir una línea de forma autónoma, responder ante desviaciones, mantener un comportamiento estable en trayectorias curvas y operar con una lógica de control coherente con el enfoque de robot velocista. Sin embargo, el alcance del proyecto se limita a un entorno controlado de laboratorio o demostración académica, por lo que no se incluyen funciones avanzadas como visión artificial, navegación en entornos no estructurados, localización global, mapeo del entorno o toma de decisiones basada en inteligencia artificial compleja.
+Desde el punto de vista físico, el alcance incluye la construcción del prototipo, el ensamblaje del sistema electrónico, la integración sobre el chasis y la verificación de su funcionamiento global en condiciones controladas. Igualmente, se contempla la elaboración de la documentación técnica necesaria para describir el diseño, el desarrollo y los resultados obtenidos.
 
-Tampoco hace parte del alcance la industrialización del sistema, la fabricación comercial del producto ni el desarrollo de una plataforma de navegación multipropósito. El enfoque del proyecto está centrado en construir una solución embebida funcional, académicamente sólida y técnicamente justificable, que permita demostrar la correcta integración entre sensores, procesamiento, comunicaciones y actuadores en un sistema autónomo de pequeña escala.
+El prototipo final deberá ser capaz de seguir una línea de forma autónoma, responder ante desviaciones, mantener estabilidad en trayectorias curvas y operar con una lógica de control acorde con el enfoque de robot velocista. Además, deberá contar con un sistema de visualización básica y un mecanismo externo de activación que apoye las pruebas y la operación controlada del robot.
+
+Sin embargo, el alcance del proyecto se limita a un entorno académico y controlado, por lo que no se incluyen funciones avanzadas como visión artificial, navegación en entornos no estructurados, mapeo del entorno, localización global o inteligencia artificial compleja.
+
+Tampoco hace parte del alcance la fabricación comercial del sistema ni su implementación en aplicaciones industriales de gran escala. El enfoque está centrado en desarrollar una solución embebida funcional, justificable y bien documentada, que permita demostrar la integración efectiva entre sensores, procesamiento, visualización y actuadores en un sistema autónomo.
+
+## Tecnologías y componentes principales
+
+- **ESP32:** microcontrolador principal encargado del procesamiento, control y ejecución del firmware.
+- **TB6612:** driver de motores utilizado para controlar el sentido de giro y la velocidad de los motores DC.
+- **Batería LiPo 300 mAh, 7.4 V, 2S, 2.22 Wh:** fuente de alimentación principal del sistema.
+- **Sensores QTR-8RC:** arreglo de sensores reflectivos empleado para detectar la línea y estimar la posición relativa del robot respecto a la trayectoria.
+- **Motorreductores Pololu 10:1:** actuadores principales del sistema de tracción, seleccionados por su relación entre velocidad y torque para un robot tipo velocista.
+- **Control láser Ja-Bots:** sistema de activación y parada externa del robot para pruebas y operación controlada.
+- **Pantalla OLED I2C:** interfaz de visualización para mostrar estados, errores y variables relevantes del sistema.
+
+## Funcionalidades principales esperadas
+
+- Detección de línea mediante sensores reflectivos.
+- Cálculo de la posición relativa de la línea respecto al robot.
+- Corrección de trayectoria en tiempo real.
+- Control diferencial de motores para giros y ajuste de rumbo.
+- Activación o habilitación del robot mediante control láser.
+- Visualización del estado del sistema en pantalla OLED.
+- Monitoreo de errores y eventos relevantes.
+- Operación autónoma sobre una pista de prueba.
+
