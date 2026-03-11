@@ -1,7 +1,7 @@
 # Proyecto de Aula – Seguidor de Línea Tipo Velocista con ESP32
 
 <p align="center">
-  <img src="assets/img/robot_portada.png" alt="Robot seguidor de línea tipo velocista con ESP32" width="850">
+  <img src="assets/img/robot_portada.png" alt="Robot seguidor de línea tipo velocista con ESP32" width="500">
 </p>
 
 <p align="center"><em>Propuesta visual del robot seguidor de línea tipo velocista desarrollado con ESP32.</em></p>
