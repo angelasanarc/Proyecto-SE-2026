@@ -8,7 +8,7 @@
 
 ---
 
-## 📘 Introducción
+## Introducción
 
 En el auge de la cuarta revolución industrial, los sistemas embebidos forman parte fundamental de numerosos dispositivos tecnológicos que facilitan el día a día, salvan vidas y aportan al desarrollo global. Un sistema embebido es un dispositivo diseñado para realizar una o pocas funciones específicas, generalmente dentro de un sistema electrónico o mecánico de mayor tamaño. Los microcontroladores se utilizan como el componente central de estos sistemas, ya que integran en un solo circuito las diferentes partes que lo componen. Éstos son capaces de recibir información, procesarla mediante algoritmos programados y generar señales de control para actuadores como luces o motores.
 
@@ -18,7 +18,7 @@ Un ejemplo de este tipo de aplicación es el carrito seguidor de línea, objeto 
 
 ---
 
-## 🎯 Objetivos
+## Objetivos
 
 ### Objetivo General
 Diseñar e implementar un sistema embebido autónomo basado en ESP32 capaz de seguir una línea mediante sensores infrarrojos, integrando telemetría inalámbrica en tiempo real para la supervisión remota del sistema, cumpliendo con buenas prácticas de ingeniería de firmware en cuanto a arquitectura, manejo de errores, logging y trazabilidad de requisitos.
@@ -32,7 +32,7 @@ Construir el módulo de logging con soporte de timestamps, niveles de severidad 
 
 ---
 
-## 👥 Asignación de roles
+## Asignación de roles
 
 ### Líder técnico (Technical Lead)
 **Responsable:** Angela Sanchez  
@@ -52,7 +52,7 @@ Encargado del diseño y ejecución del plan de pruebas, verificación del cumpli
 
 ---
 
-## 🤖 Descripción del proyecto
+## Descripción del proyecto
 
 Este proyecto consiste en el diseño e implementación de un robot seguidor de línea tipo velocista basado en una **ESP32**, capaz de desplazarse de manera autónoma sobre una pista marcada. El sistema debe detectar continuamente la línea, calcular su posición relativa respecto al robot y corregir la trayectoria en tiempo real mediante el control diferencial de sus motores.
 
@@ -62,7 +62,7 @@ El desarrollo se plantea bajo buenas prácticas de ingeniería de firmware, incl
 
 ---
 
-## ⚠️ Problema que se desea resolver
+## Problema que se desea resolver
 
 El problema central es desarrollar un robot seguidor de línea que no solo sea capaz de mantenerse sobre una trayectoria, sino que también lo haga con rapidez, estabilidad y precisión, características propias de un robot tipo velocista.
 
@@ -78,22 +78,25 @@ Durante la operación pueden presentarse condiciones como pérdida de línea, le
 
 ---
 
-## ✅ Justificación del proyecto
+## Justificación del proyecto
 
-Este proyecto representa una aplicación completa de sistemas embebidos porque integra en un mismo prototipo:
+Este proyecto representa una aplicación completa de sistemas embebidos porque permite demostrar de manera práctica el cumplimiento de los requisitos técnicos establecidos para el desarrollo del sistema.
 
-- **Sensado físico real** mediante sensores infrarrojos.
-- **Procesamiento local** usando una ESP32.
-- **Actuación electrónica** a través del control de motores.
-- **Comunicación inalámbrica** para telemetría en tiempo real.
-- **Logging estructurado** para eventos, errores y depuración.
-- **Buenas prácticas de firmware** como modularidad, trazabilidad y validación.
+En primer lugar, el sistema incorpora sensado físico real mediante un arreglo de sensores infrarrojos reflectivos, encargados de detectar la presencia y posición de una línea en el suelo. La variable medida corresponde a la reflectancia de la superficie, asociada a la detección de la línea, y su procesamiento permite estimar la posición relativa del robot respecto a la trayectoria. Además, el firmware contempla manejo de errores asociados al sensado, como lecturas fuera de rango o pérdida de detección de la línea.
 
-Además, tiene valor académico y práctico, ya que permite aplicar conocimientos de electrónica, programación embebida, control, integración hardware-software y pruebas experimentales.
+El sistema también incluye actuación electrónica, implementada a través de motores DC controlados mediante un driver de motores. El movimiento del robot depende directamente de la lógica de control implementada en el firmware, que ajusta la velocidad diferencial de los motores para mantener el seguimiento de la línea.
+
+Adicionalmente, se implementa un sistema de logging estructurado que registra eventos relevantes del sistema, incluyendo timestamps, niveles de severidad (INFO, WARN, ERROR) y códigos de error definidos para facilitar la depuración y análisis del comportamiento del robot durante su operación.
+
+El proyecto incorpora también mecanismos de comunicación aprovechando las capacidades del microcontrolador ESP32, permitiendo la transmisión de información del sistema mediante protocolos definidos que facilitan la supervisión y el monitoreo del funcionamiento del robot.
+
+Asimismo, se plantea el desarrollo de una interfaz de usuario que permita visualizar el estado del sistema, monitorear variables relevantes y detectar eventos o errores durante la operación.
+
+Finalmente, el sistema se implementará como un prototipo físico funcional, ensamblado sobre una tarjeta electrónica soldada o PCB, integrado en un chasis mecánico y alimentado mediante una fuente independiente, garantizando así una solución completa de hardware y software acorde con las buenas prácticas de desarrollo de sistemas embebidos.
 
 ---
 
-## 📌 Alcance del proyecto
+## Alcance del proyecto
 
 El alcance de este proyecto comprende el diseño, desarrollo, integración y validación de un robot seguidor de línea tipo velocista en un entorno académico y controlado.
 
@@ -109,7 +112,7 @@ El alcance de este proyecto comprende el diseño, desarrollo, integración y val
 - Documentación técnica y trazabilidad de requisitos.
 ---
 
-## 🧩 Tecnologías y componentes principales
+## Tecnologías y componentes principales
 
 - **ESP32:** microcontrolador principal encargado del procesamiento, control y comunicaciones.
 - **Sensores infrarrojos reflectivos:** utilizados para detectar la línea y estimar la posición relativa del robot.
@@ -122,7 +125,7 @@ El alcance de este proyecto comprende el diseño, desarrollo, integración y val
 
 ---
 
-## 🚀 Funcionalidades principales esperadas
+## Funcionalidades principales esperadas
 
 - Seguimiento autónomo de línea.
 - Detección continua mediante sensores infrarrojos.
