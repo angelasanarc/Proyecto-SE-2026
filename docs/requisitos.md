@@ -18,14 +18,14 @@ Este documento servirá como base para el diseño, implementación, pruebas y tr
 
 El sistema deberá:
 
-- Detectar una línea mediante sensores infrarrojos,
-- Calcular la posición relativa de la línea,
-- Controlar diferencialmente los motores para seguir la trayectoria,
-- Permitir la calibración de sensores y parámetros de control,
-- Registrar eventos y errores,
-- Supervisar condiciones de operación,
-- Mantener un comportamiento repetible ante distintas corridas de prueba,
-- Reducir el impacto de variaciones eléctricas debidas al nivel de batería.
+- Detectar una línea mediante sensores infrarrojos
+- Calcular la posición relativa de la línea
+- Controlar diferencialmente los motores para seguir la trayectoria
+- Permitir la calibración de sensores y parámetros de control
+- Registrar eventos y errores
+- Supervisar condiciones de operación
+- Mantener un comportamiento repetible ante distintas corridas de prueba
+- Reducir el impacto de variaciones eléctricas debidas al nivel de batería
 
 ---
 
@@ -35,10 +35,10 @@ El sistema deberá:
 - **RNF-XXX:** Requisito no funcional
 
 Cada requisito incluye:
-- Identificador,
-- Descripción,
-- Prioridad,
-- Criterio de aceptación.
+- Identificador
+- Descripción
+- Prioridad
+- Criterio de aceptación
 
 ---
 
@@ -84,10 +84,10 @@ Cada requisito incluye:
 
 Durante pruebas previas con robots seguidores de línea se observó que el desempeño del sistema depende fuertemente de:
 
-1. La correcta calibración inicial del arreglo de sensores,
-2. La sintonización adecuada del controlador PID,
-3. La repetibilidad del comportamiento en distintas corridas,
-4. La estabilidad de la alimentación eléctrica.
+1. La correcta calibración inicial del arreglo de sensores
+2. La sintonización adecuada del controlador PID
+3. La repetibilidad del comportamiento en distintas corridas
+4. La estabilidad de la alimentación eléctrica
 
 Se identificó además que la ausencia de regulación o compensación de voltaje puede alterar la velocidad de los motores a medida que la batería se descarga, afectando el ajuste efectivo del controlador y provocando pérdida de estabilidad. Por esta razón, el monitoreo de alimentación y la estabilidad operativa se consideran aspectos críticos del sistema.
 
@@ -95,12 +95,12 @@ Se identificó además que la ausencia de regulación o compensación de voltaje
 
 ## 7. Supuestos y restricciones
 
-- El robot empleará una ESP32 como unidad principal de procesamiento.
-- El sensado de línea se realizará con un arreglo de sensores infrarrojos.
-- El sistema contará con dos motores para tracción diferencial.
-- El proyecto deberá documentar y justificar los protocolos de comunicación utilizados.
-- Los parámetros configurables deberán poder ajustarse sin necesidad de modificar el código fuente manualmente antes de cada prueba.
-- Las métricas exactas de repetibilidad, tiempos máximos de ciclo y rango de batería serán definidas por el equipo durante la etapa de pruebas.
+- El robot empleará una ESP32 como unidad principal de procesamiento
+- El sensado de línea se realizará con un arreglo de sensores infrarrojos
+- El sistema contará con dos motores para tracción diferencial
+- El proyecto deberá documentar y justificar los protocolos de comunicación utilizados
+- Los parámetros configurables deberán poder ajustarse sin necesidad de modificar el código fuente manualmente antes de cada prueba
+- Las métricas exactas de repetibilidad, tiempos máximos de ciclo y rango de batería serán definidas por el equipo durante la etapa de pruebas
 
 ---
 
@@ -108,9 +108,9 @@ Se identificó además que la ausencia de regulación o compensación de voltaje
 
 Este documento se complementará con:
 
-- Plan de pruebas,
-- Plantilla de test cases,
-- Matriz SRTM de trazabilidad,
-- Evidencias experimentales de validación.
+- Plan de pruebas
+- Plantilla de test cases
+- Matriz SRTM de trazabilidad
+- Evidencias experimentales de validación
 
 ---
