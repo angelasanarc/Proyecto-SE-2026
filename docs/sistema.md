@@ -88,7 +88,7 @@ El funcionamiento general del sistema se da de la siguiente manera:
 
 La siguiente imagen corresponde al modelo tridimensional de la PCB desarrollada para la integración del sistema:
 
-![Render de la PCB](assets/img/ PCB3D.png)
+![Render de la PCB]( src="assets/img/PCB3D.png" )
 
 ### 5.1 Observaciones del diseño físico
 
