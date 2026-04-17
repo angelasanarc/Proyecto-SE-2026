@@ -93,11 +93,10 @@ El funcionamiento general del sistema se da de la siguiente manera:
 La siguiente imagen corresponde al modelo tridimensional de la PCB desarrollada para la integración del sistema:
 
 <p align="center">
-  <img src="assets/img/PCB.png" alt="Render 3D de la PCB del robot seguidor de línea" width="700">
+  <img src="https://raw.githubusercontent.com/angelasanarc/Proyecto-SE-2026/main/assets/img/Esquematico.png" alt="Esquemático eléctrico del robot seguidor de línea" width="900">
 </p>
 
-<p align="center"><em>Vista tridimensional de la PCB diseñada para la integración del sistema embebido.</em></p>
-
+<p align="center"><em>Esquemático eléctrico general de la PCB del sistema embebido.</em></p>
 ### 5.1 Observaciones del diseño físico
 
 En la PCB se identifican los siguientes módulos principales:
@@ -120,10 +119,10 @@ Este diseño permite una integración compacta y ordenada del sistema embebido s
 ### 6.1 Esquemático implementado
 
 <p align="center">
-  <img src="assets/img/Esquematico.png" alt="Esquemático eléctrico del robot seguidor de línea" width="900">
+  <img src="https://raw.githubusercontent.com/angelasanarc/Proyecto-SE-2026/main/assets/img/PCB3D.png" alt="Render 3D de la PCB del robot seguidor de línea" width="700">
 </p>
 
-<p align="center"><em>Esquemático eléctrico general de la PCB del sistema embebido.</em></p>
+<p align="center"><em>Vista tridimensional de la PCB diseñada para la integración del sistema embebido.</em></p>
 
 ### 6.2 Descripción general del esquemático
 
