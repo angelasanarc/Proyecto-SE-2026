@@ -9,8 +9,7 @@
 - Jeronimo Zapata  
 
 **Curso:** Sistemas Embebidos  
-**Fecha:** [Agregar fecha]  
-
+**Fecha:** 17/04/2026
 ---
 
 ## 1. Introducción
