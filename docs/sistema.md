@@ -15,8 +15,6 @@
 
 ## 1. Introducción
 
-El presente documento corresponde a la entrega del **diagrama de bloques completo del sistema, el esquemático eléctrico y el detalle de componentes** del proyecto de aula denominado **Robot Seguidor de Línea Tipo Velocista con ESP32**.
-
 El sistema desarrollado consiste en un robot autónomo capaz de detectar una línea sobre una pista, estimar su posición relativa y corregir su trayectoria en tiempo real mediante el control diferencial de dos motores DC. Para ello, se emplea una **ESP32** como unidad central de procesamiento, un arreglo de sensores infrarrojos para el sensado de línea, un driver de potencia para el accionamiento de motores, una pantalla OLED como interfaz local y una arquitectura de alimentación regulada para garantizar la estabilidad eléctrica del sistema.
 
 Además, el proyecto contempla capacidades de telemetría, logging y control seguro de arranque mediante un módulo externo de inicio y parada.
