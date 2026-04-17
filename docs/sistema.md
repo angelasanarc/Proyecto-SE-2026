@@ -54,7 +54,7 @@ El sistema embebido está organizado en varios bloques funcionales:
 flowchart LR
     A[Mini batería LiPo 300 mAh 4S 14.8 V 75C] --> B[Switch principal]
     B --> C[LM2596 - Regulador para 7.4 V]
-    B --> D[LM117 - Regulador para 3.3 V]
+    C --> D[LM117 - Regulador para 3.3 V]
 
     C --> E[TB6612FNG - Driver de motores]
     E --> F[Motor izquierdo]
