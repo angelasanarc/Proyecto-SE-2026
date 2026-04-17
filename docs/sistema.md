@@ -1,4 +1,4 @@
-# Entrega – Diagrama de bloques completo del sistema, esquemático eléctrico y detalle de componentes
+# Diagrama de bloques completo del sistema, esquemático eléctrico y detalle de componentes
 
 ## Proyecto de Aula – Robot Seguidor de Línea Tipo Velocista con ESP32
 
