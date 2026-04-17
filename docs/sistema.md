@@ -93,7 +93,7 @@ El funcionamiento general del sistema se da de la siguiente manera:
 La siguiente imagen corresponde al modelo tridimensional de la PCB desarrollada para la integración del sistema:
 
 <p align="center">
-  <img src="assets/img/PCB3D.png" alt="Render 3D de la PCB del robot seguidor de línea" width="700">
+  <img src="assets/img/PCB.png" alt="Render 3D de la PCB del robot seguidor de línea" width="700">
 </p>
 
 <p align="center"><em>Vista tridimensional de la PCB diseñada para la integración del sistema embebido.</em></p>
