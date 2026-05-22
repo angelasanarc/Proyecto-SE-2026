@@ -1,0 +1,12 @@
+idf_component_register(
+    SRCS "main.c"
+    INCLUDE_DIRS "."
+    REQUIRES
+        config
+        line_sensors
+        start_input
+        motor_driver
+        control
+        logger
+        oled_display
+)
