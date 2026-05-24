@@ -1,0 +1,4 @@
+// Renombra este archivo a sta_creds.h y pon tus credenciales.
+// sta_creds.h está en .gitignore — NO se sube al repositorio.
+#define STA_WIFI_SSID     "nombre_de_tu_wifi"
+#define STA_WIFI_PASSWORD "contraseña_wifi"

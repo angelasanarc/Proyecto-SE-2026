@@ -1,5 +1,4 @@
 #include "wifi_monitor.h"
-#include "index_html.h"
 
 #include <string.h>
 #include <stdio.h>
@@ -8,19 +7,23 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "freertos/semphr.h"
+#include "freertos/event_groups.h"
 
 #include "nvs_flash.h"
 #include "nvs.h"
 #include "esp_wifi.h"
 #include "esp_event.h"
 #include "esp_netif.h"
-#include "esp_http_server.h"
+#include "mqtt_client.h"
 #include "esp_log.h"
 
-#define MAX_CLIENTS 4
-#define NVS_NS      "robot_cfg"
+#define NVS_NS          "robot_cfg"
+#define WIFI_GOT_IP_BIT BIT0
 
 static const char *TAG = "wifi_mon";
+
+/* ---- Sincronizacion WiFi ---- */
+static EventGroupHandle_t s_wifi_eg;
 
 /* ---- Telemetria ---- */
 static SemaphoreHandle_t s_telem_mutex;
@@ -31,10 +34,9 @@ static SemaphoreHandle_t s_params_mutex;
 static robot_params_t    s_params;
 static bool              s_params_changed = false;
 
-/* ---- Clientes WebSocket ---- */
-static SemaphoreHandle_t s_fds_mutex;
-static int               s_fds[MAX_CLIENTS];
-static httpd_handle_t    s_server = NULL;
+/* ---- MQTT ---- */
+static esp_mqtt_client_handle_t s_mqtt           = NULL;
+static volatile bool            s_mqtt_connected = false;
 
 /* ---- NVS ---- */
 static void nvs_save_params(const robot_params_t *p)
@@ -74,7 +76,7 @@ static void nvs_load_params(robot_params_t *p)
              (double)p->kp, (double)p->ki, (double)p->kd, p->base_speed);
 }
 
-/* ---- Extraccion simple de campos JSON ---- */
+/* ---- JSON helper ---- */
 static float json_get_float(const char *json, const char *key)
 {
     char search[32];
@@ -86,70 +88,82 @@ static float json_get_float(const char *json, const char *key)
     return (float)atof(p);
 }
 
-/* ---- WebSocket handler ---- */
-static esp_err_t ws_handler(httpd_req_t *req)
+/* ---- Procesar comando recibido por MQTT ---- */
+static void process_cmd(const char *txt)
 {
-    if (req->method == HTTP_GET) {
-        int fd = httpd_req_to_sockfd(req);
-        xSemaphoreTake(s_fds_mutex, portMAX_DELAY);
-        for (int i = 0; i < MAX_CLIENTS; i++) {
-            if (s_fds[i] < 0) { s_fds[i] = fd; break; }
-        }
-        xSemaphoreGive(s_fds_mutex);
-        ESP_LOGI(TAG, "WS conectado fd=%d", fd);
-        return ESP_OK;
-    }
+    if (!strstr(txt, "\"cmd\":\"set\"")) return;
 
-    uint8_t buf[256] = {0};
-    httpd_ws_frame_t frame = { .payload = buf };
-    esp_err_t ret = httpd_ws_recv_frame(req, &frame, sizeof(buf) - 1);
-    if (ret != ESP_OK) return ret;
+    robot_params_t np;
+    xSemaphoreTake(s_params_mutex, portMAX_DELAY);
+    np = s_params;
+    xSemaphoreGive(s_params_mutex);
 
-    if (frame.type == HTTPD_WS_TYPE_CLOSE) {
-        int fd = httpd_req_to_sockfd(req);
-        xSemaphoreTake(s_fds_mutex, portMAX_DELAY);
-        for (int i = 0; i < MAX_CLIENTS; i++) {
-            if (s_fds[i] == fd) { s_fds[i] = -1; break; }
-        }
-        xSemaphoreGive(s_fds_mutex);
-        return ESP_OK;
-    }
+    if (strstr(txt, "\"kp\":"))    np.kp         = json_get_float(txt, "kp");
+    if (strstr(txt, "\"ki\":"))    np.ki         = json_get_float(txt, "ki");
+    if (strstr(txt, "\"kd\":"))    np.kd         = json_get_float(txt, "kd");
+    if (strstr(txt, "\"speed\":")) np.base_speed = (int)json_get_float(txt, "speed");
 
-    if (frame.type == HTTPD_WS_TYPE_TEXT && frame.len > 0) {
-        buf[frame.len] = '\0';
-        const char *txt = (const char *)buf;
+    xSemaphoreTake(s_params_mutex, portMAX_DELAY);
+    s_params         = np;
+    s_params_changed = true;
+    xSemaphoreGive(s_params_mutex);
 
-        if (strstr(txt, "\"cmd\":\"set\"")) {
-            robot_params_t np;
-            xSemaphoreTake(s_params_mutex, portMAX_DELAY);
-            np = s_params;
-            xSemaphoreGive(s_params_mutex);
-
-            if (strstr(txt, "\"kp\":"))    np.kp         = json_get_float(txt, "kp");
-            if (strstr(txt, "\"ki\":"))    np.ki         = json_get_float(txt, "ki");
-            if (strstr(txt, "\"kd\":"))    np.kd         = json_get_float(txt, "kd");
-            if (strstr(txt, "\"speed\":")) np.base_speed = (int)json_get_float(txt, "speed");
-
-            xSemaphoreTake(s_params_mutex, portMAX_DELAY);
-            s_params         = np;
-            s_params_changed = true;
-            xSemaphoreGive(s_params_mutex);
-
-            nvs_save_params(&np);
-        }
-    }
-
-    return ESP_OK;
+    nvs_save_params(&np);
 }
 
-/* ---- HTTP: sirve la pagina web ---- */
-static esp_err_t index_handler(httpd_req_t *req)
+/* ---- MQTT event handler ---- */
+static void mqtt_event_handler(void *arg, esp_event_base_t base,
+                               int32_t id, void *data)
 {
-    httpd_resp_set_type(req, "text/html");
-    return httpd_resp_send(req, INDEX_HTML, HTTPD_RESP_USE_STRLEN);
+    esp_mqtt_event_handle_t ev = (esp_mqtt_event_handle_t)data;
+
+    switch ((esp_mqtt_event_id_t)id) {
+    case MQTT_EVENT_CONNECTED:
+        ESP_LOGI(TAG, "MQTT conectado");
+        s_mqtt_connected = true;
+        esp_mqtt_client_subscribe(s_mqtt, MQTT_CMD_TOPIC, 0);
+        break;
+
+    case MQTT_EVENT_DISCONNECTED:
+        ESP_LOGW(TAG, "MQTT desconectado");
+        s_mqtt_connected = false;
+        break;
+
+    case MQTT_EVENT_DATA:
+        if (ev->data_len > 0) {
+            char buf[256] = {0};
+            int  len = ev->data_len < (int)(sizeof(buf) - 1)
+                       ? ev->data_len : (int)(sizeof(buf) - 1);
+            memcpy(buf, ev->data, len);
+            process_cmd(buf);
+        }
+        break;
+
+    default:
+        break;
+    }
 }
 
-/* ---- Task de telemetria: envia JSON a clientes WS cada 100 ms ---- */
+/* ---- WiFi event handler ---- */
+static void wifi_event_handler(void *arg, esp_event_base_t base,
+                               int32_t id, void *data)
+{
+    if (base == WIFI_EVENT) {
+        if (id == WIFI_EVENT_STA_START) {
+            esp_wifi_connect();
+        } else if (id == WIFI_EVENT_STA_DISCONNECTED) {
+            ESP_LOGW(TAG, "WiFi desconectado, reconectando...");
+            s_mqtt_connected = false;
+            esp_wifi_connect();
+        }
+    } else if (base == IP_EVENT && id == IP_EVENT_STA_GOT_IP) {
+        ip_event_got_ip_t *ev = (ip_event_got_ip_t *)data;
+        ESP_LOGI(TAG, "IP: " IPSTR, IP2STR(&ev->ip_info.ip));
+        xEventGroupSetBits(s_wifi_eg, WIFI_GOT_IP_BIT);
+    }
+}
+
+/* ---- Task de telemetria: publica JSON a MQTT cada 100 ms ---- */
 static void telemetry_task(void *arg)
 {
     char json[420];
@@ -157,7 +171,7 @@ static void telemetry_task(void *arg)
 
     while (1) {
         vTaskDelay(pdMS_TO_TICKS(100));
-        if (!s_server) continue;
+        if (!s_mqtt_connected) continue;
 
         robot_telemetry_t t;
         xSemaphoreTake(s_telem_mutex, portMAX_DELAY);
@@ -187,33 +201,8 @@ static void telemetry_task(void *arg)
                  sens,
                  (double)p.kp, (double)p.ki, (double)p.kd, p.base_speed);
 
-        httpd_ws_frame_t ws_frame = {
-            .final = true, .fragmented = false,
-            .type  = HTTPD_WS_TYPE_TEXT,
-            .payload = (uint8_t *)json,
-            .len     = strlen(json),
-        };
-
-        xSemaphoreTake(s_fds_mutex, portMAX_DELAY);
-        for (int i = 0; i < MAX_CLIENTS; i++) {
-            if (s_fds[i] < 0) continue;
-            if (httpd_ws_send_frame_async(s_server, s_fds[i], &ws_frame) != ESP_OK) {
-                ESP_LOGW(TAG, "Cliente fd=%d desconectado", s_fds[i]);
-                s_fds[i] = -1;
-            }
-        }
-        xSemaphoreGive(s_fds_mutex);
+        esp_mqtt_client_publish(s_mqtt, MQTT_TELEM_TOPIC, json, 0, 0, 0);
     }
-}
-
-/* ---- Evento WiFi ---- */
-static void wifi_event_handler(void *arg, esp_event_base_t base,
-                               int32_t id, void *data)
-{
-    if (id == WIFI_EVENT_AP_STACONNECTED)
-        ESP_LOGI(TAG, "Dispositivo conectado al AP");
-    else if (id == WIFI_EVENT_AP_STADISCONNECTED)
-        ESP_LOGI(TAG, "Dispositivo desconectado del AP");
 }
 
 /* ---- API publica ---- */
@@ -221,9 +210,8 @@ esp_err_t wifi_monitor_init(void)
 {
     s_telem_mutex  = xSemaphoreCreateMutex();
     s_params_mutex = xSemaphoreCreateMutex();
-    s_fds_mutex    = xSemaphoreCreateMutex();
+    s_wifi_eg      = xEventGroupCreate();
     memset(&s_telem, 0, sizeof(s_telem));
-    for (int i = 0; i < MAX_CLIENTS; i++) s_fds[i] = -1;
 
     /* NVS */
     esp_err_t ret = nvs_flash_init();
@@ -235,50 +223,53 @@ esp_err_t wifi_monitor_init(void)
     nvs_load_params(&s_params);
     s_params_changed = false;
 
-    /* Red */
+    /* WiFi STA */
     ESP_ERROR_CHECK(esp_netif_init());
     ESP_ERROR_CHECK(esp_event_loop_create_default());
-    esp_netif_create_default_wifi_ap();
+    esp_netif_create_default_wifi_sta();
 
     wifi_init_config_t wifi_cfg = WIFI_INIT_CONFIG_DEFAULT();
     ESP_ERROR_CHECK(esp_wifi_init(&wifi_cfg));
+
     ESP_ERROR_CHECK(esp_event_handler_instance_register(
         WIFI_EVENT, ESP_EVENT_ANY_ID, wifi_event_handler, NULL, NULL));
+    ESP_ERROR_CHECK(esp_event_handler_instance_register(
+        IP_EVENT, IP_EVENT_STA_GOT_IP, wifi_event_handler, NULL, NULL));
 
-    wifi_config_t ap_cfg = {
-        .ap = {
-            .channel        = WIFI_CHANNEL,
-            .max_connection = WIFI_MAX_STA,
-            .authmode       = WIFI_AUTH_WPA2_PSK,
-        }
-    };
-    strncpy((char *)ap_cfg.ap.ssid,     WIFI_SSID,     sizeof(ap_cfg.ap.ssid)     - 1);
-    strncpy((char *)ap_cfg.ap.password, WIFI_PASSWORD, sizeof(ap_cfg.ap.password) - 1);
-    ap_cfg.ap.ssid_len = (uint8_t)strlen(WIFI_SSID);
+    wifi_config_t sta_cfg = {0};
+    strncpy((char *)sta_cfg.sta.ssid,     STA_WIFI_SSID,
+            sizeof(sta_cfg.sta.ssid)     - 1);
+    strncpy((char *)sta_cfg.sta.password, STA_WIFI_PASSWORD,
+            sizeof(sta_cfg.sta.password) - 1);
 
-    ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_AP));
-    ESP_ERROR_CHECK(esp_wifi_set_config(WIFI_IF_AP, &ap_cfg));
+    ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_STA));
+    ESP_ERROR_CHECK(esp_wifi_set_config(WIFI_IF_STA, &sta_cfg));
     ESP_ERROR_CHECK(esp_wifi_start());
 
-    /* HTTP + WebSocket */
-    httpd_config_t srv_cfg = HTTPD_DEFAULT_CONFIG();
-    srv_cfg.server_port = 80;
-    ESP_ERROR_CHECK(httpd_start(&s_server, &srv_cfg));
+    ESP_LOGI(TAG, "Conectando a WiFi SSID=%s ...", STA_WIFI_SSID);
+    xEventGroupWaitBits(s_wifi_eg, WIFI_GOT_IP_BIT,
+                        pdFALSE, pdTRUE, pdMS_TO_TICKS(15000));
 
-    static const httpd_uri_t uri_index = {
-        .uri = "/", .method = HTTP_GET, .handler = index_handler
-    };
-    static const httpd_uri_t uri_ws = {
-        .uri = "/ws", .method = HTTP_GET,
-        .handler = ws_handler, .is_websocket = true
-    };
-    httpd_register_uri_handler(s_server, &uri_index);
-    httpd_register_uri_handler(s_server, &uri_ws);
+    /* MQTT — ID unico por dispositivo usando MAC */
+    uint8_t mac[6];
+    esp_wifi_get_mac(WIFI_IF_STA, mac);
+    char client_id[32];
+    snprintf(client_id, sizeof(client_id),
+             "robot_%02x%02x%02x", mac[3], mac[4], mac[5]);
 
-    /* Pinear al core 0 (WiFi) para no competir con el loop de control en core 1 */
+    esp_mqtt_client_config_t mqtt_cfg = {
+        .broker.address.uri     = MQTT_BROKER_URI,
+        .credentials.client_id  = client_id,
+    };
+    s_mqtt = esp_mqtt_client_init(&mqtt_cfg);
+    esp_mqtt_client_register_event(s_mqtt, ESP_EVENT_ANY_ID,
+                                   mqtt_event_handler, NULL);
+    esp_mqtt_client_start(s_mqtt);
+
+    /* Task en core 0 junto con WiFi/MQTT */
     xTaskCreatePinnedToCore(telemetry_task, "telemetry", 4096, NULL, 1, NULL, 0);
 
-    ESP_LOGI(TAG, "AP iniciado  SSID=%s  IP=192.168.4.1  puerto=80", WIFI_SSID);
+    ESP_LOGI(TAG, "MQTT iniciado broker=%s topic=%s", MQTT_BROKER_URI, MQTT_TELEM_TOPIC);
     return ESP_OK;
 }
 

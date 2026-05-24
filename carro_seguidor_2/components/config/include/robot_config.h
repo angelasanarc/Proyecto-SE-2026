@@ -61,10 +61,17 @@
 #define CONTROL_PERIOD_MS 10
 #define CONTROL_PERIOD_S  (CONTROL_PERIOD_MS / 1000.0f)
 
-/* WiFi Monitor AP */
-#define WIFI_SSID      "LineFollower"
-#define WIFI_PASSWORD  "robot1234"
-#define WIFI_CHANNEL   1
-#define WIFI_MAX_STA   4
+/* WiFi Station — credenciales en sta_creds.h (no subir a git) */
+#if defined(__has_include) && __has_include("sta_creds.h")
+# include "sta_creds.h"
+#else
+# define STA_WIFI_SSID     "YOUR_WIFI_SSID"
+# define STA_WIFI_PASSWORD "YOUR_WIFI_PASSWORD"
+#endif
+
+/* MQTT */
+#define MQTT_BROKER_URI  "mqtt://broker.hivemq.com:1883"
+#define MQTT_TELEM_TOPIC "se2026/robot/telem"
+#define MQTT_CMD_TOPIC   "se2026/robot/cmd"
 
 #endif
