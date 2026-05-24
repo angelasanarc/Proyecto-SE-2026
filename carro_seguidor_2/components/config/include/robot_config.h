@@ -20,7 +20,7 @@
 #define SENSOR_MAX_READ_US   2500    /* timeout de descarga (negro) en µs   */
 
 /* Calibracion */
-#define CALIBRATION_SAMPLES   200    /* muestras = 200 × 10 ms = 2 segundos */
+#define CALIBRATION_SAMPLES   800    /* muestras = 800 × 10 ms = 8 segundos */
 #define CALIBRATION_THRESHOLD 500    /* umbral normalizado 0-1000 para linea */
 
 /* TB6612FNG */
@@ -41,13 +41,13 @@
 #define LINE_CENTER_POSITION 3500
 #define LINE_MAX_POSITION 7000
 
-#define BASE_SPEED 120
+#define BASE_SPEED 100
 #define MAX_SPEED 255
 #define MIN_SPEED 0
 
-#define CONTROL_KP 0.04f
+#define CONTROL_KP 0.08f
 #define CONTROL_KI 0.00f
-#define CONTROL_KD 0.002f
+#define CONTROL_KD 0.004f
 
 #define CONTROL_DERIVATIVE_ALPHA 0.3f
 
