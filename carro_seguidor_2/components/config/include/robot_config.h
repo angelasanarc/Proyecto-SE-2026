@@ -48,6 +48,12 @@
 #define LOST_LINE_TIMEOUT_MS  1500  /* ms manteniendo ultima correccion si pierde la linea */
 #define LOST_LINE_MAX_CYCLES  (LOST_LINE_TIMEOUT_MS / CONTROL_PERIOD_MS)
 
+/* Intercepcion: si >= INTERSECTION_MIN_SENSORS sensores ven negro es un cruce.
+ * El robot avanza recto durante INTERSECTION_HOLD_MS ignorando el PID. */
+#define INTERSECTION_MIN_SENSORS  6
+#define INTERSECTION_HOLD_MS      400
+#define INTERSECTION_HOLD_CYCLES  (INTERSECTION_HOLD_MS / CONTROL_PERIOD_MS)
+
 #define CONTROL_KP 0.15f
 #define CONTROL_KI 0.00f
 #define CONTROL_KD 0.004f

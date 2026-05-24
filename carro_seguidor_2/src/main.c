@@ -39,12 +39,13 @@ void app_main(void)
     uint32_t raw_times[NUM_SENSORS];
     int      normalized[NUM_SENSORS];
 
-    int   left_speed      = 0;
-    int   right_speed     = 0;
-    float correction      = 0.0f;
-    int   start_active    = 0;
-    int   motors_on       = 0;
-    int   lost_line_cycles = 0;
+    int   left_speed          = 0;
+    int   right_speed         = 0;
+    float correction          = 0.0f;
+    int   start_active        = 0;
+    int   motors_on           = 0;
+    int   lost_line_cycles    = 0;
+    int   intersection_cycles = 0;
 
     /* ---- Inicializacion ---- */
     logger_init();
@@ -135,42 +136,68 @@ void app_main(void)
 
         start_active = start_input_is_active() ? 1 : 0;
 
+        /* Contar sensores activos para detectar intercepcion */
+        int active_count = 0;
+        for (int i = 0; i < NUM_SENSORS; i++)
+        {
+            if (normalized[i] > CALIBRATION_THRESHOLD) active_count++;
+        }
+
         if (!start_active)
         {
-            left_speed       = 0;
-            right_speed      = 0;
-            correction       = 0.0f;
-            motors_on        = 0;
-            lost_line_cycles = 0;
+            left_speed          = 0;
+            right_speed         = 0;
+            correction          = 0.0f;
+            motors_on           = 0;
+            lost_line_cycles    = 0;
+            intersection_cycles = 0;
             safe_stop(&line_control);
-        }
-        else if (sensor_data.line_detected)
-        {
-            /* Linea visible: PID normal */
-            lost_line_cycles = 0;
-            correction = line_control_compute(&line_control, (float)sensor_data.error);
-
-            left_speed  = clamp_forward_speed(BASE_SPEED - (int)correction);
-            right_speed = clamp_forward_speed(BASE_SPEED + (int)correction);
-
-            motor_driver_set_speed(left_speed, right_speed);
-            motors_on = 1;
-        }
-        else if (lost_line_cycles < LOST_LINE_MAX_CYCLES)
-        {
-            /* Linea perdida: mantener ultima correccion para intentar recuperar */
-            lost_line_cycles++;
-            motor_driver_set_speed(left_speed, right_speed);
-            motors_on = 1;
         }
         else
         {
-            /* Linea perdida por demasiado tiempo: parar */
-            left_speed  = 0;
-            right_speed = 0;
-            correction  = 0.0f;
-            motors_on   = 0;
-            safe_stop(&line_control);
+            /* Si se detecta intercepcion, recargar temporizador de cruce */
+            if (active_count >= INTERSECTION_MIN_SENSORS)
+                intersection_cycles = INTERSECTION_HOLD_CYCLES;
+
+            if (intersection_cycles > 0)
+            {
+                /* Cruzar intercepcion en linea recta ignorando el PID */
+                intersection_cycles--;
+                correction   = 0.0f;
+                left_speed   = BASE_SPEED;
+                right_speed  = BASE_SPEED;
+                motor_driver_set_speed(left_speed, right_speed);
+                motors_on        = 1;
+                lost_line_cycles = 0;
+            }
+            else if (sensor_data.line_detected)
+            {
+                /* Linea visible: PID normal */
+                lost_line_cycles = 0;
+                correction = line_control_compute(&line_control, (float)sensor_data.error);
+
+                left_speed  = clamp_forward_speed(BASE_SPEED - (int)correction);
+                right_speed = clamp_forward_speed(BASE_SPEED + (int)correction);
+
+                motor_driver_set_speed(left_speed, right_speed);
+                motors_on = 1;
+            }
+            else if (lost_line_cycles < LOST_LINE_MAX_CYCLES)
+            {
+                /* Linea perdida: mantener ultima correccion para intentar recuperar */
+                lost_line_cycles++;
+                motor_driver_set_speed(left_speed, right_speed);
+                motors_on = 1;
+            }
+            else
+            {
+                /* Linea perdida por demasiado tiempo: parar */
+                left_speed  = 0;
+                right_speed = 0;
+                correction  = 0.0f;
+                motors_on   = 0;
+                safe_stop(&line_control);
+            }
         }
 
         TickType_t now = xTaskGetTickCount();
