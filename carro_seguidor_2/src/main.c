@@ -14,11 +14,11 @@
 #include "oled_display.h"
 #include "wifi_monitor.h"
 
-static int clamp_forward_speed(int speed)
+static int clamp_speed(int v)
 {
-    if (speed > MAX_SPEED) return MAX_SPEED;
-    if (speed < MIN_SPEED) return MIN_SPEED;
-    return speed;
+    if (v > MAX_SPEED) return MAX_SPEED;
+    if (v < MIN_SPEED) return MIN_SPEED;
+    return v;
 }
 
 static void safe_stop(line_control_t *control)
@@ -171,8 +171,8 @@ void app_main(void)
             lost_line_cycles = 0;
             correction = line_control_compute(&line_control, (float)sensor_data.error);
 
-            left_speed  = clamp_forward_speed(base_speed - (int)correction);
-            right_speed = clamp_forward_speed(base_speed + (int)correction);
+            left_speed  = clamp_speed(base_speed - (int)correction);
+            right_speed = clamp_speed(base_speed + (int)correction);
 
             motor_driver_set_speed(left_speed, right_speed);
             motors_on = 1;
@@ -184,8 +184,8 @@ void app_main(void)
             float recov = params.kp * (float)sensor_data.error;
             if (recov >  CONTROL_OUTPUT_MAX) recov =  CONTROL_OUTPUT_MAX;
             if (recov <  CONTROL_OUTPUT_MIN) recov =  CONTROL_OUTPUT_MIN;
-            left_speed  = clamp_forward_speed(base_speed - (int)recov);
-            right_speed = clamp_forward_speed(base_speed + (int)recov);
+            left_speed  = clamp_speed(base_speed - (int)recov);
+            right_speed = clamp_speed(base_speed + (int)recov);
             motor_driver_set_speed(left_speed, right_speed);
             motors_on = 1;
         }

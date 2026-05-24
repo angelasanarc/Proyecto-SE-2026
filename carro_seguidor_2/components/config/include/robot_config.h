@@ -43,7 +43,7 @@
 
 #define BASE_SPEED 140
 #define MAX_SPEED 255
-#define MIN_SPEED 0
+#define MIN_SPEED -80
 
 #define LOST_LINE_TIMEOUT_MS  1500  /* ms manteniendo ultima correccion si pierde la linea */
 #define LOST_LINE_MAX_CYCLES  (LOST_LINE_TIMEOUT_MS / CONTROL_PERIOD_MS)
