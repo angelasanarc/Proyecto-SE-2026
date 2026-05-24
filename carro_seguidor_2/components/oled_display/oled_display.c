@@ -271,7 +271,7 @@ void oled_display_show_calibrating(const int normalized[NUM_SENSORS], int sample
     }
 
     /* contador "XXX/200" centrado: 7 chars × 6px = 42px → x=43 */
-    char buf[10];
+    char buf[24];
     snprintf(buf, sizeof(buf), "%3d/%d", samples, CALIBRATION_SAMPLES);
     oled_draw_text_scaled(43, 55, buf, 1);
 
