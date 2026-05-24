@@ -10,4 +10,5 @@ idf_component_register(
         control
         logger
         oled_display
+        wifi_monitor
 )

@@ -61,4 +61,10 @@
 #define CONTROL_PERIOD_MS 10
 #define CONTROL_PERIOD_S  (CONTROL_PERIOD_MS / 1000.0f)
 
+/* WiFi Monitor AP */
+#define WIFI_SSID      "LineFollower"
+#define WIFI_PASSWORD  "robot1234"
+#define WIFI_CHANNEL   1
+#define WIFI_MAX_STA   4
+
 #endif

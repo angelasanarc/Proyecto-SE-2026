@@ -12,6 +12,7 @@
 #include "line_control.h"
 #include "logger.h"
 #include "oled_display.h"
+#include "wifi_monitor.h"
 
 static int clamp_forward_speed(int speed)
 {
@@ -51,17 +52,23 @@ void app_main(void)
     logger_system("Inicializando sistema");
 
     oled_display_init();
+    wifi_monitor_init();
 
     line_sensors_init();
     start_input_init();
     motor_driver_init();
     motor_driver_stop();
 
+    /* Cargar parametros desde NVS (o defaults si primer arranque) */
+    robot_params_t params;
+    wifi_monitor_get_params(&params);
+    int   base_speed = params.base_speed;
+
     line_control_init(
         &line_control,
-        CONTROL_KP,
-        CONTROL_KI,
-        CONTROL_KD,
+        params.kp,
+        params.ki,
+        params.kd,
         CONTROL_PERIOD_S,
         CONTROL_DERIVATIVE_ALPHA,
         CONTROL_OUTPUT_MIN,
@@ -133,6 +140,20 @@ void app_main(void)
         qtr_calibration_normalize(&calibration, raw_times, normalized);
         line_sensors_compute(normalized, &sensor_data);
 
+        /* Aplicar parametros actualizados desde la UI web */
+        {
+            robot_params_t np;
+            if (wifi_monitor_params_changed(&np)) {
+                params     = np;
+                base_speed = params.base_speed;
+                line_control_init(&line_control,
+                                  params.kp, params.ki, params.kd,
+                                  CONTROL_PERIOD_S, CONTROL_DERIVATIVE_ALPHA,
+                                  CONTROL_OUTPUT_MIN, CONTROL_OUTPUT_MAX);
+                logger_system("Parametros PID actualizados desde UI");
+            }
+        }
+
         start_active = start_input_is_active() ? 1 : 0;
 
         if (!start_active)
@@ -150,8 +171,8 @@ void app_main(void)
             lost_line_cycles = 0;
             correction = line_control_compute(&line_control, (float)sensor_data.error);
 
-            left_speed  = clamp_forward_speed(BASE_SPEED - (int)correction);
-            right_speed = clamp_forward_speed(BASE_SPEED + (int)correction);
+            left_speed  = clamp_forward_speed(base_speed - (int)correction);
+            right_speed = clamp_forward_speed(base_speed + (int)correction);
 
             motor_driver_set_speed(left_speed, right_speed);
             motors_on = 1;
@@ -160,11 +181,11 @@ void app_main(void)
         {
             /* Linea perdida: girar hacia donde estaba usando ultimo error conocido */
             lost_line_cycles++;
-            float recov = CONTROL_KP * (float)sensor_data.error;
+            float recov = params.kp * (float)sensor_data.error;
             if (recov >  CONTROL_OUTPUT_MAX) recov =  CONTROL_OUTPUT_MAX;
             if (recov <  CONTROL_OUTPUT_MIN) recov =  CONTROL_OUTPUT_MIN;
-            left_speed  = clamp_forward_speed(BASE_SPEED - (int)recov);
-            right_speed = clamp_forward_speed(BASE_SPEED + (int)recov);
+            left_speed  = clamp_forward_speed(base_speed - (int)recov);
+            right_speed = clamp_forward_speed(base_speed + (int)recov);
             motor_driver_set_speed(left_speed, right_speed);
             motors_on = 1;
         }
@@ -193,6 +214,22 @@ void app_main(void)
         {
             logger_control(&sensor_data, left_speed, right_speed, correction, start_active);
             last_log_time = now;
+        }
+
+        /* Actualizar telemetria WiFi */
+        {
+            robot_telemetry_t telem = {
+                .error        = sensor_data.error,
+                .position     = sensor_data.position,
+                .left_speed   = left_speed,
+                .right_speed  = right_speed,
+                .correction   = correction,
+                .line_detected = sensor_data.line_detected,
+                .start_active = start_active,
+                .motors_on    = motors_on,
+            };
+            for (int i = 0; i < NUM_SENSORS; i++) telem.sensors[i] = normalized[i];
+            wifi_monitor_update(&telem);
         }
 
         vTaskDelayUntil(&last_wake_time, pdMS_TO_TICKS(CONTROL_PERIOD_MS));
