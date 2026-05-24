@@ -39,13 +39,14 @@ void app_main(void)
     uint32_t raw_times[NUM_SENSORS];
     int      normalized[NUM_SENSORS];
 
-    int   left_speed          = 0;
-    int   right_speed         = 0;
-    float correction          = 0.0f;
-    int   start_active        = 0;
-    int   motors_on           = 0;
-    int   lost_line_cycles    = 0;
-    int   intersection_cycles = 0;
+    int   left_speed             = 0;
+    int   right_speed            = 0;
+    float correction             = 0.0f;
+    int   start_active           = 0;
+    int   motors_on              = 0;
+    int   lost_line_cycles       = 0;
+    int   intersection_cycles    = 0;
+    int   intersection_confirm   = 0;
 
     /* ---- Inicializacion ---- */
     logger_init();
@@ -145,19 +146,29 @@ void app_main(void)
 
         if (!start_active)
         {
-            left_speed          = 0;
-            right_speed         = 0;
-            correction          = 0.0f;
-            motors_on           = 0;
-            lost_line_cycles    = 0;
-            intersection_cycles = 0;
+            left_speed           = 0;
+            right_speed          = 0;
+            correction           = 0.0f;
+            motors_on            = 0;
+            lost_line_cycles     = 0;
+            intersection_cycles  = 0;
+            intersection_confirm = 0;
             safe_stop(&line_control);
         }
         else
         {
-            /* Si se detecta intercepcion, recargar temporizador de cruce */
+            /* Confirmar intercepcion: necesita MIN_SENSORS durante MIN_CYCLES
+             * ciclos consecutivos para no confundirse con curvas de 90 grados */
             if (active_count >= INTERSECTION_MIN_SENSORS)
-                intersection_cycles = INTERSECTION_HOLD_CYCLES;
+            {
+                intersection_confirm++;
+                if (intersection_confirm >= INTERSECTION_MIN_CYCLES)
+                    intersection_cycles = INTERSECTION_HOLD_CYCLES;
+            }
+            else
+            {
+                intersection_confirm = 0;
+            }
 
             if (intersection_cycles > 0)
             {
