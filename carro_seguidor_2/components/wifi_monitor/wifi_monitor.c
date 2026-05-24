@@ -21,9 +21,6 @@
 
 static const char *TAG = "wifi_mon";
 
-extern const uint8_t index_html_start[] asm("_binary_index_html_start");
-extern const uint8_t index_html_end[]   asm("_binary_index_html_end");
-
 /* ---- Telemetria ---- */
 static SemaphoreHandle_t s_telem_mutex;
 static robot_telemetry_t s_telem;
@@ -144,14 +141,6 @@ static esp_err_t ws_handler(httpd_req_t *req)
     return ESP_OK;
 }
 
-/* ---- HTTP: sirve la pagina web ---- */
-static esp_err_t index_handler(httpd_req_t *req)
-{
-    httpd_resp_set_type(req, "text/html");
-    return httpd_resp_send(req, (const char *)index_html_start,
-                           index_html_end - index_html_start);
-}
-
 /* ---- Task de telemetria: envia JSON a clientes WS cada 100 ms ---- */
 static void telemetry_task(void *arg)
 {
@@ -268,14 +257,10 @@ esp_err_t wifi_monitor_init(void)
     srv_cfg.server_port = 80;
     ESP_ERROR_CHECK(httpd_start(&s_server, &srv_cfg));
 
-    static const httpd_uri_t uri_index = {
-        .uri = "/", .method = HTTP_GET, .handler = index_handler
-    };
     static const httpd_uri_t uri_ws = {
         .uri = "/ws", .method = HTTP_GET,
         .handler = ws_handler, .is_websocket = true
     };
-    httpd_register_uri_handler(s_server, &uri_index);
     httpd_register_uri_handler(s_server, &uri_ws);
 
     /* Pinear al core 0 (WiFi) para no competir con el loop de control en core 1 */

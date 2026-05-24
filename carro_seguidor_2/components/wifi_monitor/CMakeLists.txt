@@ -1,7 +1,6 @@
 idf_component_register(
     SRCS "wifi_monitor.c"
     INCLUDE_DIRS "include"
-    EMBED_FILES "index.html"
     REQUIRES
         config
         nvs_flash
