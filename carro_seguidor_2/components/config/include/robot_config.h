@@ -51,7 +51,7 @@
 
 #define CONTROL_KP 0.15f
 #define CONTROL_KI 0.05f
-#define CONTROL_KD 0.000f
+#define CONTROL_KD 0.001f
 
 #define CONTROL_DERIVATIVE_ALPHA 0.3f
 
