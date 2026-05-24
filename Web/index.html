@@ -1,308 +1,183 @@
 <!DOCTYPE html>
-<html lang="es">
+<html lang='es'>
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>Robot Seguidor de Línea</title>
-  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
-  <style>
-    *{box-sizing:border-box;margin:0;padding:0}
-    body{background:#0f172a;color:#e2e8f0;font-family:'Courier New',monospace;min-height:100vh}
-    header{display:flex;justify-content:space-between;align-items:center;
-           padding:12px 20px;background:#1e293b;border-bottom:2px solid #3b82f6}
-    header h1{font-size:15px;letter-spacing:2px;color:#3b82f6}
-    .dot{width:10px;height:10px;border-radius:50%;background:#ef4444;
-         display:inline-block;margin-right:6px;transition:background .3s}
-    .dot.on{background:#22c55e}
-    #stxt{font-size:12px;color:#94a3b8}
-    .conn{display:flex;gap:8px;padding:10px 20px;background:#1e293b;
-          border-bottom:1px solid #334155;align-items:center}
-    .conn label{font-size:11px;color:#64748b;white-space:nowrap}
-    .conn input{flex:1;padding:5px 8px;background:#0f172a;border:1px solid #475569;
-                color:#e2e8f0;border-radius:4px;font-family:monospace;font-size:12px}
-    .btn{padding:5px 12px;border:none;border-radius:4px;cursor:pointer;
-         font-size:12px;font-family:monospace}
-    .btn-b{background:#3b82f6;color:#fff}
-    .btn-r{background:#ef4444;color:#fff}
-    .btn-g{background:#22c55e;color:#0f172a}
-    .btn-s{background:#334155;color:#94a3b8}
-    .cards{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;padding:12px 20px}
-    @media(max-width:600px){.cards{grid-template-columns:repeat(2,1fr)}}
-    .card{background:#1e293b;border-radius:8px;padding:10px;text-align:center;border:1px solid #334155}
-    .card .lbl{font-size:10px;color:#64748b;text-transform:uppercase;letter-spacing:1px;margin-bottom:4px}
-    .card .val{font-size:20px;font-weight:bold}
-    .badge{padding:2px 10px;border-radius:99px;font-size:11px;font-weight:bold}
-    .bon{background:#14532d;color:#86efac}
-    .boff{background:#450a0a;color:#fca5a5}
-    .sec{font-size:10px;color:#475569;text-transform:uppercase;
-         letter-spacing:2px;padding:8px 20px 4px}
-    .sbars{display:flex;gap:4px;padding:0 20px 6px;height:52px;align-items:flex-end}
-    .sbar{flex:1;background:#1e293b;border-radius:3px;border:1px solid #334155;
-          overflow:hidden;display:flex;flex-direction:column-reverse}
-    .sfill{background:#3b82f6;transition:height .1s;border-radius:2px}
-    .sfill.act{background:#22c55e}
-    .snums{display:flex;gap:4px;padding:0 20px 12px}
-    .snum{flex:1;text-align:center;font-size:9px;color:#475569}
-    /* Params panel */
-    .pbox{background:#1e293b;border:1px solid #334155;border-radius:8px;
-          padding:14px;margin:0 20px 12px}
-    .pbox-title{font-size:11px;color:#64748b;text-transform:uppercase;
-                letter-spacing:1px;margin-bottom:12px;display:flex;align-items:center;gap:10px}
-    .pgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
-    @media(max-width:600px){.pgrid{grid-template-columns:repeat(2,1fr)}}
-    .prow{display:flex;flex-direction:column;gap:4px}
-    .prow label{font-size:10px;color:#94a3b8;letter-spacing:1px}
-    .prow input[type=number]{width:100%;padding:5px 6px;background:#0f172a;
-      border:1px solid #475569;color:#e2e8f0;border-radius:4px;
-      font-family:monospace;font-size:14px;text-align:center}
-    .prow input[type=range]{width:100%;accent-color:#3b82f6;margin-top:2px}
-    .pactions{display:flex;gap:8px;margin-top:12px;align-items:center}
-    #psaved{font-size:11px;color:#22c55e;transition:opacity .5s}
-    /* Charts */
-    .charts{display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:0 20px 20px}
-    @media(max-width:700px){.charts{grid-template-columns:1fr}}
-    .cbox{background:#1e293b;border-radius:8px;padding:12px;border:1px solid #334155}
-    .cbox h3{font-size:10px;color:#64748b;text-transform:uppercase;
-             letter-spacing:1px;margin-bottom:8px}
-  </style>
+<meta charset='UTF-8'>
+<meta name='viewport' content='width=device-width,initial-scale=1'>
+<title>Robot Seguidor</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#0f172a;color:#e2e8f0;font-family:monospace;min-height:100vh}
+header{display:flex;justify-content:space-between;align-items:center;padding:10px 16px;background:#1e293b;border-bottom:2px solid #3b82f6}
+h1{font-size:13px;letter-spacing:2px;color:#3b82f6}
+.dot{width:9px;height:9px;border-radius:50%;background:#ef4444;display:inline-block;margin-right:5px;transition:background .3s}
+.dot.on{background:#22c55e}
+.conn{display:flex;gap:6px;padding:8px 16px;background:#1e293b;border-bottom:1px solid #334155;align-items:center;flex-wrap:wrap}
+.conn label{font-size:11px;color:#64748b}
+.conn input{flex:1;min-width:160px;padding:4px 7px;background:#0f172a;border:1px solid #475569;color:#e2e8f0;border-radius:4px;font-family:monospace;font-size:12px}
+.btn{padding:4px 10px;border:none;border-radius:4px;cursor:pointer;font-size:12px;font-family:monospace}
+.bb{background:#3b82f6;color:#fff}.br{background:#ef4444;color:#fff}.bg{background:#22c55e;color:#0f172a}.bs{background:#334155;color:#94a3b8}
+.cards{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;padding:10px 16px}
+@media(max-width:500px){.cards{grid-template-columns:repeat(2,1fr)}}
+.card{background:#1e293b;border-radius:7px;padding:8px;text-align:center;border:1px solid #334155}
+.lbl{font-size:9px;color:#64748b;text-transform:uppercase;letter-spacing:1px;margin-bottom:3px}
+.val{font-size:18px;font-weight:bold}
+.badge{padding:2px 8px;border-radius:99px;font-size:10px;font-weight:bold}
+.bon{background:#14532d;color:#86efac}.boff{background:#450a0a;color:#fca5a5}
+.sec{font-size:10px;color:#475569;text-transform:uppercase;letter-spacing:2px;padding:6px 16px 3px}
+.sbars{display:flex;gap:3px;padding:0 16px 4px;height:48px;align-items:flex-end}
+.sbar{flex:1;background:#1e293b;border-radius:3px;border:1px solid #334155;overflow:hidden;display:flex;flex-direction:column-reverse}
+.sfill{background:#3b82f6;transition:height .1s;border-radius:2px}
+.sfill.act{background:#22c55e}
+.snums{display:flex;gap:3px;padding:0 16px 10px}
+.snum{flex:1;text-align:center;font-size:8px;color:#475569}
+.pbox{background:#1e293b;border:1px solid #334155;border-radius:7px;padding:12px;margin:0 16px 10px}
+.ptit{font-size:10px;color:#64748b;text-transform:uppercase;letter-spacing:1px;margin-bottom:10px;display:flex;align-items:center;gap:8px}
+.pgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+@media(max-width:500px){.pgrid{grid-template-columns:repeat(2,1fr)}}
+.prow{display:flex;flex-direction:column;gap:3px}
+.prow label{font-size:9px;color:#94a3b8;letter-spacing:1px}
+.prow input[type=number]{width:100%;padding:4px 5px;background:#0f172a;border:1px solid #475569;color:#e2e8f0;border-radius:4px;font-family:monospace;font-size:13px;text-align:center}
+.prow input[type=range]{width:100%;accent-color:#3b82f6;margin-top:2px}
+.pact{display:flex;gap:6px;margin-top:10px;align-items:center}
+#psaved{font-size:10px;color:#22c55e;transition:opacity .5s}
+.charts{display:grid;grid-template-columns:1fr 1fr;gap:6px;padding:0 16px 16px}
+@media(max-width:600px){.charts{grid-template-columns:1fr}}
+.cbox{background:#1e293b;border-radius:7px;padding:10px;border:1px solid #334155}
+.cbox h3{font-size:9px;color:#64748b;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px}
+canvas{display:block;width:100%;border-radius:3px}
+</style>
 </head>
 <body>
-
 <header>
-  <h1>ROBOT SEGUIDOR DE LÍNEA</h1>
-  <span><span class="dot" id="dot"></span><span id="stxt">Desconectado</span></span>
+<h1>ROBOT SEGUIDOR</h1>
+<span><span class='dot' id='dot'></span><span id='stxt' style='font-size:11px;color:#94a3b8'>Desconectado</span></span>
 </header>
-
-<div class="conn">
-  <label>WebSocket:</label>
-  <input id="wsurl" value="ws://192.168.4.1/ws"/>
-  <button class="btn btn-b" onclick="wsCon()">Conectar</button>
-  <button class="btn btn-r" onclick="wsDis()">Desconectar</button>
+<div class='conn'>
+<label>WS:</label>
+<input id='wsurl' value='ws://192.168.4.1/ws'>
+<button class='btn bb' onclick='wsCon()'>Conectar</button>
+<button class='btn br' onclick='wsDis()'>Desconectar</button>
 </div>
-
-<!-- Status cards -->
-<div class="cards">
-  <div class="card"><div class="lbl">Error</div><div class="val" id="verr">—</div></div>
-  <div class="card"><div class="lbl">Posición</div><div class="val" id="vpos">—</div></div>
-  <div class="card"><div class="lbl">Vel. Izquierda</div><div class="val" id="vlspd">—</div></div>
-  <div class="card"><div class="lbl">Vel. Derecha</div><div class="val" id="vrspd">—</div></div>
-  <div class="card"><div class="lbl">Corrección PID</div><div class="val" id="vcorr">—</div></div>
-  <div class="card"><div class="lbl">Línea</div><div class="val" id="vline">—</div></div>
-  <div class="card"><div class="lbl">Motores</div><div class="val" id="vmot">—</div></div>
-  <div class="card"><div class="lbl">Start</div><div class="val" id="vstart">—</div></div>
+<div class='cards'>
+<div class='card'><div class='lbl'>Error</div><div class='val' id='verr'>-</div></div>
+<div class='card'><div class='lbl'>Posicion</div><div class='val' id='vpos'>-</div></div>
+<div class='card'><div class='lbl'>Vel Izq</div><div class='val' id='vlspd'>-</div></div>
+<div class='card'><div class='lbl'>Vel Der</div><div class='val' id='vrspd'>-</div></div>
+<div class='card'><div class='lbl'>Correccion</div><div class='val' id='vcorr'>-</div></div>
+<div class='card'><div class='lbl'>Linea</div><div class='val' id='vline'>-</div></div>
+<div class='card'><div class='lbl'>Motores</div><div class='val' id='vmot'>-</div></div>
+<div class='card'><div class='lbl'>Start</div><div class='val' id='vstart'>-</div></div>
 </div>
-
-<!-- Sensor bars -->
-<div class="sec">Sensores QTR-8 (0 – 1000)</div>
-<div class="sbars" id="sbars"></div>
-<div class="snums" id="snums"></div>
-
-<!-- PID params editor -->
-<div class="pbox">
-  <div class="pbox-title">
-    Parámetros PID
-    <span id="psaved" style="opacity:0">✓ Guardado en robot</span>
-  </div>
-  <div class="pgrid">
-    <div class="prow">
-      <label>KP (Proporcional)</label>
-      <input type="number" id="pkp"  min="0" max="1"    step="0.01"   value="0.15">
-      <input type="range"  id="skp"  min="0" max="1"    step="0.01"   value="0.15">
-    </div>
-    <div class="prow">
-      <label>KI (Integral)</label>
-      <input type="number" id="pki"  min="0" max="0.5"  step="0.005"  value="0.05">
-      <input type="range"  id="ski"  min="0" max="0.5"  step="0.005"  value="0.05">
-    </div>
-    <div class="prow">
-      <label>KD (Derivativo)</label>
-      <input type="number" id="pkd"  min="0" max="0.05" step="0.001"  value="0.001">
-      <input type="range"  id="skd"  min="0" max="0.05" step="0.001"  value="0.001">
-    </div>
-    <div class="prow">
-      <label>Velocidad Base (0–255)</label>
-      <input type="number" id="pspd" min="0" max="255"  step="1"      value="140">
-      <input type="range"  id="sspd" min="0" max="255"  step="1"      value="140">
-    </div>
-  </div>
-  <div class="pactions">
-    <button class="btn btn-g" onclick="applyParams()">Aplicar</button>
-    <button class="btn btn-s" onclick="resetParams()">Restablecer defaults</button>
-  </div>
+<div class='sec'>Sensores QTR-8</div>
+<div class='sbars' id='sbars'></div>
+<div class='snums' id='snums'></div>
+<div class='pbox'>
+<div class='ptit'>Parametros PID<span id='psaved' style='opacity:0'>Guardado</span></div>
+<div class='pgrid'>
+<div class='prow'><label>KP</label><input type='number' id='pkp' min='0' max='1' step='0.01' value='0.15'><input type='range' id='skp' min='0' max='1' step='0.01' value='0.15'></div>
+<div class='prow'><label>KI</label><input type='number' id='pki' min='0' max='0.5' step='0.005' value='0.05'><input type='range' id='ski' min='0' max='0.5' step='0.005' value='0.05'></div>
+<div class='prow'><label>KD</label><input type='number' id='pkd' min='0' max='0.05' step='0.001' value='0.001'><input type='range' id='skd' min='0' max='0.05' step='0.001' value='0.001'></div>
+<div class='prow'><label>Vel Base</label><input type='number' id='pspd' min='0' max='255' step='1' value='140'><input type='range' id='sspd' min='0' max='255' step='1' value='140'></div>
 </div>
-
-<!-- Charts -->
-<div class="charts">
-  <div class="cbox"><h3>Error &amp; Corrección PID</h3><canvas id="cerr"></canvas></div>
-  <div class="cbox"><h3>Velocidades Izq / Der</h3><canvas id="cspd"></canvas></div>
-  <div class="cbox"><h3>Posición en Línea (0 – 7000, centro = 3500)</h3><canvas id="cpos"></canvas></div>
-  <div class="cbox"><h3>Sensores Activos</h3><canvas id="csens"></canvas></div>
+<div class='pact'>
+<button class='btn bg' onclick='applyParams()'>Aplicar</button>
+<button class='btn bs' onclick='resetParams()'>Restablecer</button>
 </div>
-
+</div>
+<div class='charts'>
+<div class='cbox'><h3>Error / Correccion</h3><canvas id='cerr'></canvas></div>
+<div class='cbox'><h3>Velocidades</h3><canvas id='cspd'></canvas></div>
+<div class='cbox'><h3>Posicion</h3><canvas id='cpos'></canvas></div>
+<div class='cbox'><h3>Sensores Activos</h3><canvas id='csens'></canvas></div>
+</div>
 <script>
-const WIN = 150, NS = 8;
-const DEFAULTS = { kp: 0.15, ki: 0.05, kd: 0.001, speed: 140 };
-
-// Sensor bars
-const sbarsEl = document.getElementById('sbars');
-const snumsEl = document.getElementById('snums');
-for (let i = 0; i < NS; i++) {
-  const b = document.createElement('div');
-  b.className = 'sbar';
-  b.innerHTML = `<div class="sfill" id="sf${i}" style="height:0%"></div>`;
-  sbarsEl.appendChild(b);
-  const n = document.createElement('div');
-  n.className = 'snum'; n.id = `sn${i}`; n.textContent = `S${i}`;
-  snumsEl.appendChild(n);
+var NS=8,WIN=120,DEFS={kp:.15,ki:.05,kd:.001,speed:140};
+var sb=document.getElementById('sbars'),sn=document.getElementById('snums');
+for(var i=0;i<NS;i++){
+var b=document.createElement('div');b.className='sbar';
+b.innerHTML='<div class="sfill" id="sf'+i+'" style="height:0%"></div>';
+sb.appendChild(b);
+var n=document.createElement('div');n.className='snum';n.id='sn'+i;n.textContent='S'+i;
+sn.appendChild(n);
 }
-
-// Sync slider ↔ number
-['kp','ki','kd','spd'].forEach(id => {
-  const num = document.getElementById('p' + id);
-  const sld = document.getElementById('s' + id);
-  num.oninput = () => { sld.value = num.value; };
-  sld.oninput = () => { num.value = sld.value; };
+['kp','ki','kd','spd'].forEach(function(id){
+var p=document.getElementById('p'+id),s=document.getElementById('s'+id);
+p.oninput=function(){s.value=p.value;};s.oninput=function(){p.value=s.value;};
 });
-
-// Chart factory
-function mkChart(id, series, ymin, ymax) {
-  return new Chart(document.getElementById(id), {
-    type: 'line',
-    data: {
-      labels: Array(WIN).fill(''),
-      datasets: series.map(([lbl, clr]) => ({
-        label: lbl, borderColor: clr, backgroundColor: clr + '18',
-        data: Array(WIN).fill(null),
-        borderWidth: 1.5, pointRadius: 0, fill: false, tension: 0.2
-      }))
-    },
-    options: {
-      animation: false, responsive: true,
-      plugins: { legend: { labels: { color: '#94a3b8', font: { size: 10 } } } },
-      scales: {
-        x: { display: false },
-        y: {
-          min: ymin, max: ymax,
-          grid: { color: '#1e3040' },
-          ticks: { color: '#94a3b8', font: { size: 10 } }
-        }
-      }
-    }
-  });
+function MkChart(id,ser,mn,mx){
+var cv=document.getElementById(id),dat=ser.map(function(){return[];}),ctx=cv.getContext('2d');
+function draw(){
+var w=cv.parentElement.clientWidth-20,h=80;cv.width=w;cv.height=h;
+ctx.fillStyle='#0f172a';ctx.fillRect(0,0,w,h);
+ctx.strokeStyle='#1e3040';ctx.lineWidth=1;
+for(var r=1;r<4;r++){ctx.beginPath();ctx.moveTo(0,h*r/4);ctx.lineTo(w,h*r/4);ctx.stroke();}
+ser.forEach(function(s,si){
+if(!dat[si].length)return;
+ctx.strokeStyle=s[1];ctx.lineWidth=1.5;ctx.beginPath();
+dat[si].forEach(function(v,i){
+var x=w*i/(WIN-1),y=h-(v-mn)/(mx-mn)*h;
+if(y<0)y=0;if(y>h)y=h;
+i?ctx.lineTo(x,y):ctx.moveTo(x,y);
+});ctx.stroke();
+});}
+return{push:function(){var a=arguments;ser.forEach(function(_,i){dat[i].push(+a[i]);if(dat[i].length>WIN)dat[i].shift();});draw();}};
 }
-
-const cErr  = mkChart('cerr',  [['Error','#ef4444'],['Corrección','#f59e0b']], -3500, 3500);
-const cSpd  = mkChart('cspd',  [['Izq','#3b82f6'],['Der','#22c55e']], 0, 255);
-const cPos  = mkChart('cpos',  [['Posición','#a855f7']], 0, 7000);
-const cSens = mkChart('csens', [['Activos','#06b6d4']], 0, 8);
-
-function pushChart(chart, ...vals) {
-  vals.forEach((v, i) => {
-    chart.data.datasets[i].data.push(v);
-    if (chart.data.datasets[i].data.length > WIN) chart.data.datasets[i].data.shift();
-  });
-  chart.data.labels.push('');
-  if (chart.data.labels.length > WIN) chart.data.labels.shift();
-  chart.update('none');
+var cE=MkChart('cerr',[['E','#ef4444'],['C','#f59e0b']],-3500,3500);
+var cS=MkChart('cspd',[['I','#3b82f6'],['D','#22c55e']],0,255);
+var cP=MkChart('cpos',[['P','#a855f7']],0,7000);
+var cA=MkChart('csens',[['A','#06b6d4']],0,8);
+function badge(v){return v?'<span class="badge bon">SI</span>':'<span class="badge boff">NO</span>';}
+var pL=false;
+function loadP(d){
+if(pL||d.kp===undefined)return;
+['kp','ki','kd'].forEach(function(k){document.getElementById('p'+k).value=d[k];document.getElementById('s'+k).value=d[k];});
+document.getElementById('pspd').value=d.speed;document.getElementById('sspd').value=d.speed;
+pL=true;
 }
-
-function badge(v) {
-  return v ? '<span class="badge bon">SI</span>' : '<span class="badge boff">NO</span>';
+function onData(d){
+document.getElementById('verr').textContent=d.err;
+document.getElementById('vpos').textContent=d.pos;
+document.getElementById('vlspd').textContent=d.lspd;
+document.getElementById('vrspd').textContent=d.rspd;
+document.getElementById('vcorr').textContent=d.corr.toFixed(1);
+document.getElementById('vline').innerHTML=badge(d.line);
+document.getElementById('vmot').innerHTML=badge(d.mot);
+document.getElementById('vstart').innerHTML=badge(d.start);
+var act=0;
+d.sens.forEach(function(v,i){
+var f=document.getElementById('sf'+i),n=document.getElementById('sn'+i);
+f.style.height=(v/10)+'%';f.className='sfill'+(v>500?' act':'');n.textContent=v;
+if(v>500)act++;
+});
+cE.push(d.err,d.corr);cS.push(d.lspd,d.rspd);cP.push(d.pos);cA.push(act);
+loadP(d);
 }
-
-// Update params inputs from telemetry (only once per connection)
-let paramsLoaded = false;
-function loadParamsFromData(d) {
-  if (paramsLoaded || d.kp === undefined) return;
-  document.getElementById('pkp').value  = d.kp;
-  document.getElementById('skp').value  = d.kp;
-  document.getElementById('pki').value  = d.ki;
-  document.getElementById('ski').value  = d.ki;
-  document.getElementById('pkd').value  = d.kd;
-  document.getElementById('skd').value  = d.kd;
-  document.getElementById('pspd').value = d.speed;
-  document.getElementById('sspd').value = d.speed;
-  paramsLoaded = true;
+function applyParams(){
+if(!ws||ws.readyState!==1){alert('Sin conexion');return;}
+ws.send(JSON.stringify({cmd:'set',
+kp:parseFloat(document.getElementById('pkp').value),
+ki:parseFloat(document.getElementById('pki').value),
+kd:parseFloat(document.getElementById('pkd').value),
+speed:parseInt(document.getElementById('pspd').value)}));
+var s=document.getElementById('psaved');s.style.opacity='1';setTimeout(function(){s.style.opacity='0';},2500);
 }
-
-function onData(d) {
-  document.getElementById('verr').textContent   = d.err;
-  document.getElementById('vpos').textContent   = d.pos;
-  document.getElementById('vlspd').textContent  = d.lspd;
-  document.getElementById('vrspd').textContent  = d.rspd;
-  document.getElementById('vcorr').textContent  = d.corr.toFixed(1);
-  document.getElementById('vline').innerHTML    = badge(d.line);
-  document.getElementById('vmot').innerHTML     = badge(d.mot);
-  document.getElementById('vstart').innerHTML   = badge(d.start);
-
-  let active = 0;
-  d.sens.forEach((v, i) => {
-    const f = document.getElementById(`sf${i}`);
-    const n = document.getElementById(`sn${i}`);
-    f.style.height = (v / 10) + '%';
-    f.className = 'sfill' + (v > 500 ? ' act' : '');
-    n.textContent = v;
-    if (v > 500) active++;
-  });
-
-  pushChart(cErr,  d.err, d.corr);
-  pushChart(cSpd,  d.lspd, d.rspd);
-  pushChart(cPos,  d.pos);
-  pushChart(cSens, active);
-
-  loadParamsFromData(d);
+function resetParams(){
+document.getElementById('pkp').value=DEFS.kp;document.getElementById('skp').value=DEFS.kp;
+document.getElementById('pki').value=DEFS.ki;document.getElementById('ski').value=DEFS.ki;
+document.getElementById('pkd').value=DEFS.kd;document.getElementById('skd').value=DEFS.kd;
+document.getElementById('pspd').value=DEFS.speed;document.getElementById('sspd').value=DEFS.speed;
+applyParams();
 }
-
-// PID params actions
-function applyParams() {
-  if (!ws || ws.readyState !== WebSocket.OPEN) {
-    alert('No hay conexión con el robot');
-    return;
-  }
-  const payload = {
-    cmd:   'set',
-    kp:    parseFloat(document.getElementById('pkp').value),
-    ki:    parseFloat(document.getElementById('pki').value),
-    kd:    parseFloat(document.getElementById('pkd').value),
-    speed: parseInt  (document.getElementById('pspd').value)
-  };
-  ws.send(JSON.stringify(payload));
-  const saved = document.getElementById('psaved');
-  saved.style.opacity = '1';
-  setTimeout(() => { saved.style.opacity = '0'; }, 2500);
+var ws=null;
+function wsCon(){
+wsDis();pL=false;
+var url=document.getElementById('wsurl').value.trim();
+ws=new WebSocket(url);
+ws.onopen=function(){document.getElementById('dot').classList.add('on');document.getElementById('stxt').textContent='Conectado';};
+ws.onclose=ws.onerror=function(){document.getElementById('dot').classList.remove('on');document.getElementById('stxt').textContent='Desconectado';};
+ws.onmessage=function(e){try{onData(JSON.parse(e.data));}catch(x){}};
 }
-
-function resetParams() {
-  document.getElementById('pkp').value  = DEFAULTS.kp;
-  document.getElementById('skp').value  = DEFAULTS.kp;
-  document.getElementById('pki').value  = DEFAULTS.ki;
-  document.getElementById('ski').value  = DEFAULTS.ki;
-  document.getElementById('pkd').value  = DEFAULTS.kd;
-  document.getElementById('skd').value  = DEFAULTS.kd;
-  document.getElementById('pspd').value = DEFAULTS.speed;
-  document.getElementById('sspd').value = DEFAULTS.speed;
-  applyParams();
-}
-
-// WebSocket
-let ws = null;
-function wsCon() {
-  wsDis();
-  paramsLoaded = false;
-  const url = document.getElementById('wsurl').value.trim();
-  ws = new WebSocket(url);
-  ws.onopen = () => {
-    document.getElementById('dot').classList.add('on');
-    document.getElementById('stxt').textContent = 'Conectado — ' + url;
-  };
-  ws.onclose = ws.onerror = () => {
-    document.getElementById('dot').classList.remove('on');
-    document.getElementById('stxt').textContent = 'Desconectado';
-  };
-  ws.onmessage = e => { try { onData(JSON.parse(e.data)); } catch(_) {} };
-}
-function wsDis() { if (ws) { ws.close(); ws = null; } }
-
+function wsDis(){if(ws){ws.close();ws=null;}}
 wsCon();
 </script>
 </body>
