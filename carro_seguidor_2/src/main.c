@@ -1,8 +1,10 @@
 #include <stdio.h>
 #include <stdbool.h>
+#include <string.h>
 
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
+#include "freertos/semphr.h"
 
 #include "robot_config.h"
 #include "qtr_calibration.h"
@@ -14,6 +16,59 @@
 #include "oled_display.h"
 #include "wifi_monitor.h"
 
+/* ---- Display task: pantalla en tarea separada para no bloquear el control ---- */
+typedef enum { DISP_CALIBRATING, DISP_WAITING, DISP_RUNNING } disp_mode_t;
+
+typedef struct {
+    disp_mode_t        mode;
+    int                cal_norm[NUM_SENSORS];
+    int                cal_samples;
+    int                start_active;
+    int                motors_on;
+    int                left_speed;
+    int                right_speed;
+    float              correction;
+    line_sensor_data_t sensor_data;
+} disp_state_t;
+
+static SemaphoreHandle_t s_disp_mutex;
+static disp_state_t      s_disp;
+
+static void disp_set(const disp_state_t *st)
+{
+    if (xSemaphoreTake(s_disp_mutex, 0) == pdTRUE) {
+        s_disp = *st;
+        xSemaphoreGive(s_disp_mutex);
+    }
+}
+
+static void display_task(void *arg)
+{
+    disp_state_t st = {0};
+    while (1) {
+        vTaskDelay(pdMS_TO_TICKS(80));
+        if (xSemaphoreTake(s_disp_mutex, 0) == pdTRUE) {
+            st = s_disp;
+            xSemaphoreGive(s_disp_mutex);
+        }
+        switch (st.mode) {
+        case DISP_CALIBRATING:
+            oled_display_show_calibrating(st.cal_norm, st.cal_samples);
+            break;
+        case DISP_WAITING:
+            oled_display_show_calibrated();
+            break;
+        case DISP_RUNNING:
+            oled_display_show_status(st.start_active, st.motors_on,
+                                     &st.sensor_data,
+                                     st.left_speed, st.right_speed,
+                                     st.correction);
+            break;
+        }
+    }
+}
+
+/* ---- Helpers ---- */
 static int clamp_speed(int v)
 {
     if (v > MAX_SPEED) return MAX_SPEED;
@@ -27,6 +82,7 @@ static void safe_stop(line_control_t *control)
     line_control_reset(control);
 }
 
+/* ---- app_main ---- */
 void app_main(void)
 {
     line_sensor_data_t sensor_data = {
@@ -51,6 +107,9 @@ void app_main(void)
     logger_init();
     logger_system("Inicializando sistema");
 
+    s_disp_mutex = xSemaphoreCreateMutex();
+    memset(&s_disp, 0, sizeof(s_disp));
+
     oled_display_init();
     wifi_monitor_init();
 
@@ -59,16 +118,17 @@ void app_main(void)
     motor_driver_init();
     motor_driver_stop();
 
-    /* Cargar parametros desde NVS (o defaults si primer arranque) */
+    /* Tarea de pantalla en core 1, prioridad baja */
+    xTaskCreatePinnedToCore(display_task, "display", 2048, NULL, 1, NULL, 1);
+
+    /* Cargar parametros desde NVS */
     robot_params_t params;
     wifi_monitor_get_params(&params);
-    int   base_speed = params.base_speed;
+    int base_speed = params.base_speed;
 
     line_control_init(
         &line_control,
-        params.kp,
-        params.ki,
-        params.kd,
+        params.kp, params.ki, params.kd,
         CONTROL_PERIOD_S,
         CONTROL_DERIVATIVE_ALPHA,
         CONTROL_OUTPUT_MIN,
@@ -77,46 +137,42 @@ void app_main(void)
 
     /* ---- Fase de calibracion ---- */
     qtr_calibration_init(&calibration);
-    logger_system("Calibrando sensores - mueva el robot sobre la linea");
+    logger_system("Calibrando sensores");
 
-    /* Muestra la primera pantalla de calibracion antes de empezar */
     for (int i = 0; i < NUM_SENSORS; i++) normalized[i] = 0;
-    oled_display_show_calibrating(normalized, 0);
-
-    int display_tick = 0;
+    {
+        disp_state_t d = {.mode = DISP_CALIBRATING, .cal_samples = 0};
+        memcpy(d.cal_norm, normalized, sizeof(normalized));
+        disp_set(&d);
+    }
 
     while (!qtr_calibration_is_done(&calibration))
     {
         line_sensors_read_raw(raw_times);
         qtr_calibration_update(&calibration, raw_times);
+        qtr_calibration_normalize(&calibration, raw_times, normalized);
 
-        /* Actualizar OLED cada 80 ms (cada 8 ciclos de 10 ms) */
-        display_tick++;
-        if (display_tick >= 8)
-        {
-            qtr_calibration_normalize(&calibration, raw_times, normalized);
-            oled_display_show_calibrating(normalized, calibration.sample_count);
-            display_tick = 0;
-        }
+        disp_state_t d = {.mode = DISP_CALIBRATING,
+                          .cal_samples = calibration.sample_count};
+        memcpy(d.cal_norm, normalized, sizeof(normalized));
+        disp_set(&d);
 
         vTaskDelay(pdMS_TO_TICKS(CONTROL_PERIOD_MS));
     }
 
     logger_system("Calibracion completa - esperando START");
-    oled_display_show_calibrated();
+    {
+        disp_state_t d = {.mode = DISP_WAITING};
+        disp_set(&d);
+    }
 
     /* ---- Esperar START explicito ---- */
-    /* Estabilizar el debounce con el estado actual del boton */
     for (int i = 0; i < 10; i++)
     {
         start_input_is_active();
         vTaskDelay(pdMS_TO_TICKS(CONTROL_PERIOD_MS));
     }
 
-    /*
-     * Requiere ver el boton INACTIVO al menos una vez antes de aceptar
-     * ACTIVO. Evita arranque si el modulo JA-Bots ya estaba en estado RUN.
-     */
     {
         bool saw_inactive = !start_input_is_active();
         while (true)
@@ -130,9 +186,8 @@ void app_main(void)
     logger_system("START recibido - iniciando recorrido");
 
     /* ---- Loop de control ---- */
-    TickType_t last_wake_time    = xTaskGetTickCount();
-    TickType_t last_display_time = xTaskGetTickCount();
-    TickType_t last_log_time     = xTaskGetTickCount();
+    TickType_t last_wake_time = xTaskGetTickCount();
+    TickType_t last_log_time  = xTaskGetTickCount();
 
     while (1)
     {
@@ -150,7 +205,7 @@ void app_main(void)
                                   params.kp, params.ki, params.kd,
                                   CONTROL_PERIOD_S, CONTROL_DERIVATIVE_ALPHA,
                                   CONTROL_OUTPUT_MIN, CONTROL_OUTPUT_MAX);
-                logger_system("Parametros PID actualizados desde UI");
+                logger_system("Parametros PID actualizados");
             }
         }
 
@@ -167,7 +222,6 @@ void app_main(void)
         }
         else if (sensor_data.line_detected)
         {
-            /* Linea visible: PID normal */
             lost_line_cycles = 0;
             correction = line_control_compute(&line_control, (float)sensor_data.error);
 
@@ -179,7 +233,6 @@ void app_main(void)
         }
         else if (lost_line_cycles < LOST_LINE_MAX_CYCLES)
         {
-            /* Linea perdida: girar hacia donde estaba usando ultimo error conocido */
             lost_line_cycles++;
             float recov = params.kp * (float)sensor_data.error;
             if (recov >  CONTROL_OUTPUT_MAX) recov =  CONTROL_OUTPUT_MAX;
@@ -191,7 +244,6 @@ void app_main(void)
         }
         else
         {
-            /* Linea perdida por demasiado tiempo: parar */
             left_speed  = 0;
             right_speed = 0;
             correction  = 0.0f;
@@ -199,37 +251,40 @@ void app_main(void)
             safe_stop(&line_control);
         }
 
-        TickType_t now = xTaskGetTickCount();
-
-        if ((now - last_display_time) >= pdMS_TO_TICKS(80))
+        /* Actualizar display (sin bloquear — la tarea display lee esto cada 80ms) */
         {
-            oled_display_show_status(
-                start_active, motors_on, &sensor_data,
-                left_speed, right_speed, correction
-            );
-            last_display_time = now;
+            disp_state_t d = {
+                .mode        = DISP_RUNNING,
+                .start_active = start_active,
+                .motors_on   = motors_on,
+                .left_speed  = left_speed,
+                .right_speed = right_speed,
+                .correction  = correction,
+                .sensor_data = sensor_data,
+            };
+            disp_set(&d);
         }
 
-        if ((now - last_log_time) >= pdMS_TO_TICKS(80))
-        {
-            logger_control(&sensor_data, left_speed, right_speed, correction, start_active);
-            last_log_time = now;
-        }
-
-        /* Actualizar telemetria WiFi */
+        /* Telemetria WiFi */
         {
             robot_telemetry_t telem = {
-                .error        = sensor_data.error,
-                .position     = sensor_data.position,
-                .left_speed   = left_speed,
-                .right_speed  = right_speed,
-                .correction   = correction,
+                .error         = sensor_data.error,
+                .position      = sensor_data.position,
+                .left_speed    = left_speed,
+                .right_speed   = right_speed,
+                .correction    = correction,
                 .line_detected = sensor_data.line_detected,
-                .start_active = start_active,
-                .motors_on    = motors_on,
+                .start_active  = start_active,
+                .motors_on     = motors_on,
             };
             for (int i = 0; i < NUM_SENSORS; i++) telem.sensors[i] = normalized[i];
             wifi_monitor_update(&telem);
+        }
+
+        if ((xTaskGetTickCount() - last_log_time) >= pdMS_TO_TICKS(80))
+        {
+            logger_control(&sensor_data, left_speed, right_speed, correction, start_active);
+            last_log_time = xTaskGetTickCount();
         }
 
         vTaskDelayUntil(&last_wake_time, pdMS_TO_TICKS(CONTROL_PERIOD_MS));

@@ -11,10 +11,11 @@
 
 #include "robot_config.h"
 
-static bool                   oled_present = true;
-static uint8_t                oled_buffer[128 * 8];
+static bool                    oled_present = true;
+static uint8_t                 oled_buffer[128 * 8];
 static i2c_master_bus_handle_t s_bus;
 static i2c_master_dev_handle_t s_dev;
+static TickType_t              oled_failed_at = 0;
 
 static const char font_chars[] = " 0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ:-_/.";
 
@@ -76,9 +77,30 @@ static const uint8_t *get_glyph(char c)
     return font_5x7[0];
 }
 
+static void oled_try_recover(void)
+{
+    if (oled_present) return;
+    if ((xTaskGetTickCount() - oled_failed_at) < pdMS_TO_TICKS(2000)) return;
+    uint8_t init_cmds[] = {
+        0xAE, 0x20, 0x02, 0xB0, 0xC8, 0x00, 0x10, 0x40,
+        0x81, 0x7F, 0xA1, 0xA6, 0xA8, 0x3F, 0xA4, 0xD3,
+        0x00, 0xD5, 0x80, 0xD9, 0xF1, 0xDA, 0x12, 0xDB,
+        0x40, 0x8D, 0x14, 0xAF
+    };
+    oled_present = true;
+    for (int i = 0; i < (int)sizeof(init_cmds); i++) {
+        uint8_t buf[2] = { 0x00, init_cmds[i] };
+        if (i2c_master_transmit(s_dev, buf, 2, 8) != ESP_OK) {
+            oled_present = false;
+            oled_failed_at = xTaskGetTickCount();
+            return;
+        }
+    }
+}
+
 static esp_err_t oled_send(uint8_t control, const uint8_t *data, size_t len)
 {
-    if (!oled_present) return ESP_FAIL;
+    if (!oled_present) { oled_try_recover(); return ESP_FAIL; }
 
     uint8_t buffer[17];
     size_t  offset = 0;
@@ -91,9 +113,9 @@ static esp_err_t oled_send(uint8_t control, const uint8_t *data, size_t len)
         buffer[0] = control;
         memcpy(&buffer[1], &data[offset], chunk);
 
-        esp_err_t ret = i2c_master_transmit(s_dev, buffer, chunk + 1, 100);
+        esp_err_t ret = i2c_master_transmit(s_dev, buffer, chunk + 1, 8);
 
-        if (ret != ESP_OK) { oled_present = false; return ret; }
+        if (ret != ESP_OK) { oled_present = false; oled_failed_at = xTaskGetTickCount(); return ret; }
         offset += chunk;
     }
     return ESP_OK;
