@@ -184,8 +184,14 @@ void app_main(void)
             }
             else if (lost_line_cycles < LOST_LINE_MAX_CYCLES)
             {
-                /* Linea perdida: mantener ultima correccion para intentar recuperar */
+                /* Linea perdida: girar hacia el lado donde estaba la linea
+                 * usando el ultimo error conocido (posicion preservada). */
                 lost_line_cycles++;
+                float recov = CONTROL_KP * (float)sensor_data.error;
+                if (recov >  CONTROL_OUTPUT_MAX) recov =  CONTROL_OUTPUT_MAX;
+                if (recov <  CONTROL_OUTPUT_MIN) recov =  CONTROL_OUTPUT_MIN;
+                left_speed  = clamp_forward_speed(BASE_SPEED - (int)recov);
+                right_speed = clamp_forward_speed(BASE_SPEED + (int)recov);
                 motor_driver_set_speed(left_speed, right_speed);
                 motors_on = 1;
             }
