@@ -121,8 +121,8 @@
     </div>
     <div class="prow">
       <label>Velocidad Base (0–255)</label>
-      <input type="number" id="pspd" min="0" max="255"  step="1"      value="100">
-      <input type="range"  id="sspd" min="0" max="255"  step="1"      value="100">
+      <input type="number" id="pspd" min="0" max="255"  step="1"      value="140">
+      <input type="range"  id="sspd" min="0" max="255"  step="1"      value="140">
     </div>
   </div>
   <div class="pactions">
@@ -141,7 +141,7 @@
 
 <script>
 const WIN = 150, NS = 8;
-const DEFAULTS = { kp: 0.15, ki: 0.05, kd: 0.001, speed: 100 };
+const DEFAULTS = { kp: 0.15, ki: 0.05, kd: 0.001, speed: 140 };
 
 // Sensor bars
 const sbarsEl = document.getElementById('sbars');

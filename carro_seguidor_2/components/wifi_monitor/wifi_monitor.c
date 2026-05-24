@@ -278,7 +278,8 @@ esp_err_t wifi_monitor_init(void)
     httpd_register_uri_handler(s_server, &uri_index);
     httpd_register_uri_handler(s_server, &uri_ws);
 
-    xTaskCreate(telemetry_task, "telemetry", 4096, NULL, 1, NULL);
+    /* Pinear al core 0 (WiFi) para no competir con el loop de control en core 1 */
+    xTaskCreatePinnedToCore(telemetry_task, "telemetry", 4096, NULL, 1, NULL, 0);
 
     ESP_LOGI(TAG, "AP iniciado  SSID=%s  IP=192.168.4.1  puerto=80", WIFI_SSID);
     return ESP_OK;
