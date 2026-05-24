@@ -45,7 +45,10 @@
 #define MAX_SPEED 255
 #define MIN_SPEED 0
 
-#define CONTROL_KP 0.08f
+#define LOST_LINE_TIMEOUT_MS  500   /* ms manteniendo ultima correccion si pierde la linea */
+#define LOST_LINE_MAX_CYCLES  (LOST_LINE_TIMEOUT_MS / CONTROL_PERIOD_MS)
+
+#define CONTROL_KP 0.12f
 #define CONTROL_KI 0.00f
 #define CONTROL_KD 0.004f
 

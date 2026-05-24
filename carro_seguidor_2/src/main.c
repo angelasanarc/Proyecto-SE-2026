@@ -39,11 +39,12 @@ void app_main(void)
     uint32_t raw_times[NUM_SENSORS];
     int      normalized[NUM_SENSORS];
 
-    int   left_speed   = 0;
-    int   right_speed  = 0;
-    float correction   = 0.0f;
-    int   start_active = 0;
-    int   motors_on    = 0;
+    int   left_speed      = 0;
+    int   right_speed     = 0;
+    float correction      = 0.0f;
+    int   start_active    = 0;
+    int   motors_on       = 0;
+    int   lost_line_cycles = 0;
 
     /* ---- Inicializacion ---- */
     logger_init();
@@ -136,22 +137,17 @@ void app_main(void)
 
         if (!start_active)
         {
-            left_speed  = 0;
-            right_speed = 0;
-            correction  = 0.0f;
-            motors_on   = 0;
+            left_speed       = 0;
+            right_speed      = 0;
+            correction       = 0.0f;
+            motors_on        = 0;
+            lost_line_cycles = 0;
             safe_stop(&line_control);
         }
-        else if (!sensor_data.line_detected)
+        else if (sensor_data.line_detected)
         {
-            left_speed  = 0;
-            right_speed = 0;
-            correction  = 0.0f;
-            motors_on   = 0;
-            safe_stop(&line_control);
-        }
-        else
-        {
+            /* Linea visible: PID normal */
+            lost_line_cycles = 0;
             correction = line_control_compute(&line_control, (float)sensor_data.error);
 
             left_speed  = clamp_forward_speed(BASE_SPEED - (int)correction);
@@ -159,6 +155,22 @@ void app_main(void)
 
             motor_driver_set_speed(left_speed, right_speed);
             motors_on = 1;
+        }
+        else if (lost_line_cycles < LOST_LINE_MAX_CYCLES)
+        {
+            /* Linea perdida: mantener ultima correccion para intentar recuperar */
+            lost_line_cycles++;
+            motor_driver_set_speed(left_speed, right_speed);
+            motors_on = 1;
+        }
+        else
+        {
+            /* Linea perdida por demasiado tiempo: parar */
+            left_speed  = 0;
+            right_speed = 0;
+            correction  = 0.0f;
+            motors_on   = 0;
+            safe_stop(&line_control);
         }
 
         TickType_t now = xTaskGetTickCount();
