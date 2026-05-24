@@ -372,9 +372,9 @@ void oled_display_show_status(
         oled_draw_rect(12, 25, 92, 7, false);
         int fill = left_speed * 90 / MAX_SPEED;
         if (fill > 0) oled_draw_rect(13, 26, fill, 5, true);
-        char spd[6];
-        snprintf(spd, sizeof(spd), " %3d", left_speed);
-        oled_draw_text_scaled(104, 25, spd, 1);
+        char spd_l[12];
+        snprintf(spd_l, sizeof(spd_l), " %3d", left_speed);
+        oled_draw_text_scaled(104, 25, spd_l, 1);
     }
 
     /* barra motor derecho */
@@ -383,9 +383,9 @@ void oled_display_show_status(
         oled_draw_rect(12, 34, 92, 7, false);
         int fill = right_speed * 90 / MAX_SPEED;
         if (fill > 0) oled_draw_rect(13, 35, fill, 5, true);
-        char spd[6];
-        snprintf(spd, sizeof(spd), " %3d", right_speed);
-        oled_draw_text_scaled(104, 34, spd, 1);
+        char spd_r[12];
+        snprintf(spd_r, sizeof(spd_r), " %3d", right_speed);
+        oled_draw_text_scaled(104, 34, spd_r, 1);
     }
 
     oled_hline(0, 127, 43);
