@@ -97,6 +97,30 @@ void app_main(void)
     logger_system("Calibracion completa - esperando START");
     oled_display_show_calibrated();
 
+    /* ---- Esperar START explicito ---- */
+    /* Estabilizar el debounce con el estado actual del boton */
+    for (int i = 0; i < 10; i++)
+    {
+        start_input_is_active();
+        vTaskDelay(pdMS_TO_TICKS(CONTROL_PERIOD_MS));
+    }
+
+    /*
+     * Requiere ver el boton INACTIVO al menos una vez antes de aceptar
+     * ACTIVO. Evita arranque si el modulo JA-Bots ya estaba en estado RUN.
+     */
+    {
+        bool saw_inactive = !start_input_is_active();
+        while (true)
+        {
+            vTaskDelay(pdMS_TO_TICKS(CONTROL_PERIOD_MS));
+            bool active = start_input_is_active();
+            if (!active) saw_inactive = true;
+            if (saw_inactive && active) break;
+        }
+    }
+    logger_system("START recibido - iniciando recorrido");
+
     /* ---- Loop de control ---- */
     TickType_t last_wake_time    = xTaskGetTickCount();
     TickType_t last_display_time = xTaskGetTickCount();
