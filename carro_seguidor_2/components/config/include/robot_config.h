@@ -41,7 +41,7 @@
 #define LINE_CENTER_POSITION 3500
 #define LINE_MAX_POSITION 7000
 
-#define BASE_SPEED 100
+#define BASE_SPEED 70
 #define MAX_SPEED 255
 #define MIN_SPEED 0
 
