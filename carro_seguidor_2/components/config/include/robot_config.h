@@ -41,7 +41,7 @@
 #define LINE_CENTER_POSITION 3500
 #define LINE_MAX_POSITION 7000
 
-#define BASE_SPEED 70
+#define BASE_SPEED 100
 #define MAX_SPEED 255
 #define MIN_SPEED 0
 
@@ -51,7 +51,7 @@
 
 #define CONTROL_KP 0.15f
 #define CONTROL_KI 0.00f
-#define CONTROL_KD 0.004f
+#define CONTROL_KD 0.000f
 
 #define CONTROL_DERIVATIVE_ALPHA 0.3f
 
