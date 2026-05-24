@@ -1,65 +1,70 @@
 #include "line_control.h"
 
+/*
+ * PID discreto en forma posicional (dominio z).
+ *
+ * Ecuaciones de diferencias:
+ *   P[k]   = kp * e[k]
+ *   I[k]   = I[k-1] + ki_d * e[k]          ki_d = Ki * T
+ *   diff   = alpha*diff[k-1] + (1-alpha)*(e[k]-e[k-1])   (filtro EMA)
+ *   D[k]   = kd_d * diff                    kd_d = Kd / T
+ *   u[k]   = P[k] + I[k] + D[k]
+ *
+ * Anti-windup: I[k] se actualiza solo cuando u[k] no esta saturado.
+ */
+
 void line_control_init(
     line_control_t *control,
     float kp,
     float ki,
     float kd,
+    float T,
+    float alpha,
     float output_min,
     float output_max
 )
 {
-    control->kp = kp;
-    control->ki = ki;
-    control->kd = kd;
+    control->kp    = kp;
+    control->ki_d  = ki * T;
+    control->kd_d  = (T > 0.0f) ? (kd / T) : 0.0f;
+    control->alpha = alpha;
 
-    control->integral = 0.0f;
-    control->previous_error = 0.0f;
+    control->integral      = 0.0f;
+    control->prev_error    = 0.0f;
+    control->filtered_diff = 0.0f;
 
     control->output_min = output_min;
     control->output_max = output_max;
 }
 
-float line_control_compute(
-    line_control_t *control,
-    float error,
-    float dt
-)
+float line_control_compute(line_control_t *control, float error)
 {
-    if (dt <= 0.0f)
+    float P = control->kp * error;
+
+    float raw_diff = error - control->prev_error;
+    control->filtered_diff = control->alpha * control->filtered_diff
+                           + (1.0f - control->alpha) * raw_diff;
+    float D = control->kd_d * control->filtered_diff;
+
+    float u = P + control->integral + D;
+
+    /* Anti-windup: acumular integral solo si la salida no esta saturada */
+    if (u > control->output_min && u < control->output_max)
     {
-        dt = 0.001f;
+        control->integral += control->ki_d * error;
     }
 
-    float proportional = control->kp * error;
+    if (u > control->output_max) u = control->output_max;
+    if (u < control->output_min) u = control->output_min;
 
-    control->integral += error * dt;
+    control->prev_error = error;
 
-    float integral = control->ki * control->integral;
-
-    float derivative = (error - control->previous_error) / dt;
-
-    float derivative_term = control->kd * derivative;
-
-    float output = proportional + integral + derivative_term;
-
-    if (output > control->output_max)
-    {
-        output = control->output_max;
-    }
-
-    if (output < control->output_min)
-    {
-        output = control->output_min;
-    }
-
-    control->previous_error = error;
-
-    return output;
+    return u;
 }
 
 void line_control_reset(line_control_t *control)
 {
-    control->integral = 0.0f;
-    control->previous_error = 0.0f;
+    control->integral      = 0.0f;
+    control->prev_error    = 0.0f;
+    control->filtered_diff = 0.0f;
 }

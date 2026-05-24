@@ -8,12 +8,20 @@
 #define PIN_OLED_SCL 22
 
 /* START */
-#define PIN_START 34
-#define START_ACTIVE_LEVEL 0
+#define PIN_START            34
+#define START_ACTIVE_LEVEL   0
+/* Ciclos consecutivos necesarios para aceptar cambio de estado del boton.
+ * Con CONTROL_PERIOD_MS = 10 ms: 5 ciclos = 50 ms de debounce. */
+#define BUTTON_DEBOUNCE_CYCLES 5
 
-/* Sensores binarios */
-#define NUM_SENSORS 8
-#define DIGITAL_LINE_LEVEL 0
+/* Sensores QTR-8RC */
+#define NUM_SENSORS          8
+#define SENSOR_CHARGE_US     10      /* tiempo de carga del capacitor en µs */
+#define SENSOR_MAX_READ_US   2500    /* timeout de descarga (negro) en µs   */
+
+/* Calibracion */
+#define CALIBRATION_SAMPLES   200    /* muestras = 200 × 10 ms = 2 segundos */
+#define CALIBRATION_THRESHOLD 500    /* umbral normalizado 0-1000 para linea */
 
 /* TB6612FNG */
 #define PIN_AIN1 2
@@ -41,9 +49,12 @@
 #define CONTROL_KI 0.00f
 #define CONTROL_KD 0.002f
 
+#define CONTROL_DERIVATIVE_ALPHA 0.3f
+
 #define CONTROL_OUTPUT_MIN -120.0f
 #define CONTROL_OUTPUT_MAX  120.0f
 
 #define CONTROL_PERIOD_MS 10
+#define CONTROL_PERIOD_S  (CONTROL_PERIOD_MS / 1000.0f)
 
 #endif

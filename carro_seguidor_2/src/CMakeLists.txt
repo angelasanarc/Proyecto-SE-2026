@@ -3,6 +3,7 @@ idf_component_register(
     INCLUDE_DIRS "."
     REQUIRES
         config
+        calibration
         line_sensors
         start_input
         motor_driver
