@@ -7,13 +7,14 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 
-#include "driver/i2c.h"
-#include "driver/gpio.h"
+#include "driver/i2c_master.h"
 
 #include "robot_config.h"
 
-static bool    oled_present = true;
-static uint8_t oled_buffer[128 * 8];
+static bool                   oled_present = true;
+static uint8_t                oled_buffer[128 * 8];
+static i2c_master_bus_handle_t s_bus;
+static i2c_master_dev_handle_t s_dev;
 
 static const char font_chars[] = " 0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ:-_/.";
 
@@ -90,9 +91,7 @@ static esp_err_t oled_send(uint8_t control, const uint8_t *data, size_t len)
         buffer[0] = control;
         memcpy(&buffer[1], &data[offset], chunk);
 
-        esp_err_t ret = i2c_master_write_to_device(
-            I2C_PORT, OLED_ADDR, buffer, chunk + 1, pdMS_TO_TICKS(100)
-        );
+        esp_err_t ret = i2c_master_transmit(s_dev, buffer, chunk + 1, 100);
 
         if (ret != ESP_OK) { oled_present = false; return ret; }
         offset += chunk;
@@ -185,19 +184,25 @@ static void oled_flush(void)
 
 esp_err_t oled_display_init(void)
 {
-    i2c_config_t config = {
-        .mode          = I2C_MODE_MASTER,
-        .sda_io_num    = PIN_OLED_SDA,
-        .scl_io_num    = PIN_OLED_SCL,
-        .sda_pullup_en = GPIO_PULLUP_ENABLE,
-        .scl_pullup_en = GPIO_PULLUP_ENABLE,
-        .master.clk_speed = 400000
+    i2c_master_bus_config_t bus_cfg = {
+        .i2c_port            = I2C_PORT,
+        .sda_io_num          = PIN_OLED_SDA,
+        .scl_io_num          = PIN_OLED_SCL,
+        .clk_source          = I2C_CLK_SRC_DEFAULT,
+        .glitch_ignore_cnt   = 7,
+        .flags.enable_internal_pullup = true,
     };
 
-    esp_err_t ret = i2c_param_config(I2C_PORT, &config);
+    esp_err_t ret = i2c_new_master_bus(&bus_cfg, &s_bus);
     if (ret != ESP_OK) { oled_present = false; return ret; }
 
-    ret = i2c_driver_install(I2C_PORT, config.mode, 0, 0, 0);
+    i2c_device_config_t dev_cfg = {
+        .dev_addr_length = I2C_ADDR_BIT_LEN_7,
+        .device_address  = OLED_ADDR,
+        .scl_speed_hz    = 400000,
+    };
+
+    ret = i2c_master_bus_add_device(s_bus, &dev_cfg, &s_dev);
     if (ret != ESP_OK) { oled_present = false; return ret; }
 
     vTaskDelay(pdMS_TO_TICKS(100));
