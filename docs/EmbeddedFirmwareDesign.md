@@ -54,8 +54,6 @@ La estrategia de seguridad principal consiste en detener los motores cuando no s
 
 El diagrama de bloques del sistema embebido representa la relación entre los elementos físicos del robot, los módulos principales del firmware y la interfaz remota de monitoreo. El flujo general inicia en los sensores infrarrojos, continúa con el procesamiento realizado por la ESP32 y finaliza con la actuación sobre los motores mediante el driver TB6612FNG.
 
-**Espacio para imagen del diagrama de bloques del sistema embebido:**
-
 ![Diagrama de bloques del sistema embebido](DocImages/Esquematico.png)
 
 El diagrama debe representar la conexión entre los sensores, la ESP32, el controlador PID, el driver de motores y los motores DC. También debe incluir la entrada física START, la pantalla OLED por I2C, la salida serial de depuración, la comunicación WiFi/MQTT y la página web de monitoreo.
