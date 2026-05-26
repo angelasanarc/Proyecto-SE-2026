@@ -117,7 +117,7 @@ Este enfoque permite cumplir con las funciones principales del sistema embebido 
 La estructura modular del firmware se organiza alrededor de nueve bloques principales: `config`, `calibration`, `line_sensors`, `control`, `motor_driver`, `start_input`, `oled_display`, `logger` y `wifi_monitor`.
 
 La estructura general del firmware es la siguiente:
-![Estructura de Firmware](...assets/img/ArquitecturaFirmware.png)
+![Estructura de Firmware](../assets/img/ArquitecturaFirmware.png)
 
 Esta estructura permite que cada módulo tenga una interfaz pública definida en su archivo `.h` y una implementación específica en su archivo `.c`. De esta manera, `main.c` puede utilizar las funciones de cada componente sin depender directamente de los detalles internos de implementación.
 
