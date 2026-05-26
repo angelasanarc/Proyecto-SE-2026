@@ -185,7 +185,16 @@ El proyecto está organizado bajo la estructura de PlatformIO utilizando ESP-IDF
 
 La estructura general del firmware es la siguiente:
 
+La estructura general del firmware es la siguiente:
+
+```text
 carro_seguidor_2/
+├── assets/
+│   └── img/
+│       ├── Esquematico.png
+│       ├── FlujoFirmware.png
+│       ├── ArquitecturaFirmware.png
+│       └── EstadosFirmware.png
 ├── components/
 │   ├── calibration/
 │   │   ├── qtr_calibration.c
@@ -235,6 +244,10 @@ carro_seguidor_2/
 ├── src/
 │   ├── main.c
 │   └── CMakeLists.txt
+├── docs/
+│   └── EmbeddedFirmwareDesign.md
+├── Web/
+│   └── index.html
 ├── include/
 ├── lib/
 ├── test/
@@ -242,11 +255,8 @@ carro_seguidor_2/
 ├── platformio.ini
 ├── sdkconfig.az-delivery-devkit-v4
 └── sdkconfig.defaults
-Web/
-└── index.html
-docs/
-├── embedded_firmware_design.md
-└── images/
+```
+
 
 La carpeta src/ contiene el archivo principal del firmware, main.c, donde se encuentra la función app_main(). Este archivo actúa como punto de entrada de la aplicación y coordina la inicialización, calibración, operación general, control del robot, actualización de interfaz y comunicación remota.
 
