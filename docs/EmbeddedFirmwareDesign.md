@@ -96,7 +96,7 @@ La corrección calculada se combina con la velocidad base configurada para deter
 
 Durante el ciclo de operación, el sistema también actualiza la pantalla OLED con información relevante, genera mensajes de depuración mediante salida serial y envía telemetría hacia la página web mediante WiFi/MQTT. Si desde la interfaz web se modifican parámetros como `KP`, `KI`, `KD` o velocidad base, el firmware recibe los nuevos valores, actualiza el controlador y continúa operando con la configuración ajustada.
 
-![Diagrama de Flujo](assets/img/FlujoFirmware.png)
+![Diagrama de Flujo](...assets/img/FlujoFirmware.png)
 
 ## 3. Arquitectura de firmware
 
@@ -117,7 +117,7 @@ Este enfoque permite cumplir con las funciones principales del sistema embebido 
 La estructura modular del firmware se organiza alrededor de nueve bloques principales: `config`, `calibration`, `line_sensors`, `control`, `motor_driver`, `start_input`, `oled_display`, `logger` y `wifi_monitor`.
 
 La estructura general del firmware es la siguiente:
-![Estructura de Firmware](assets/img/ArquitecturaFirmware.png)
+![Estructura de Firmware](...assets/img/ArquitecturaFirmware.png)
 
 Esta estructura permite que cada módulo tenga una interfaz pública definida en su archivo `.h` y una implementación específica en su archivo `.c`. De esta manera, `main.c` puede utilizar las funciones de cada componente sin depender directamente de los detalles internos de implementación.
 
@@ -430,7 +430,7 @@ Si en cualquier momento la señal START se desactiva, el sistema pasa directamen
 ### 6.3 Diagrama de estados
 
 El diagrama de estados del firmware representa las condiciones principales de operación y las transiciones entre ellas. Este diagrama permite visualizar cómo el sistema pasa desde la inicialización hasta la operación normal, y cómo responde ante condiciones de espera, calibración, pérdida temporal de línea o parada segura.
-![Diagrama de Estados](assets/img/EstadosFirmware.png)
+![Diagrama de Estados](...assets/img/EstadosFirmware.png)
 
 ## 7. Manejo de errores y seguridad
 
