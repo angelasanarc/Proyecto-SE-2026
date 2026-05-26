@@ -54,7 +54,7 @@ La estrategia de seguridad principal consiste en detener los motores cuando no s
 
 El diagrama de bloques del sistema embebido representa la relación entre los elementos físicos del robot, los módulos principales del firmware y la interfaz remota de monitoreo. El flujo general inicia en los sensores infrarrojos, continúa con el procesamiento realizado por la ESP32 y finaliza con la actuación sobre los motores mediante el driver TB6612FNG.
 
-![Diagrama de bloques del sistema embebido](assets/img/Esquematico.png)
+![Diagrama de bloques del sistema embebido](../assets/img/Esquematico.png)
 
 El diagrama debe representar la conexión entre los sensores, la ESP32, el controlador PID, el driver de motores y los motores DC. También debe incluir la entrada física START, la pantalla OLED por I2C, la salida serial de depuración, la comunicación WiFi/MQTT y la página web de monitoreo.
 
@@ -96,7 +96,7 @@ La corrección calculada se combina con la velocidad base configurada para deter
 
 Durante el ciclo de operación, el sistema también actualiza la pantalla OLED con información relevante, genera mensajes de depuración mediante salida serial y envía telemetría hacia la página web mediante WiFi/MQTT. Si desde la interfaz web se modifican parámetros como `KP`, `KI`, `KD` o velocidad base, el firmware recibe los nuevos valores, actualiza el controlador y continúa operando con la configuración ajustada.
 
-![Diagrama de Flujo](...assets/img/FlujoFirmware.png)
+![Diagrama de Flujo](../assets/img/FlujoFirmware.png)
 
 ## 3. Arquitectura de firmware
 
@@ -430,7 +430,7 @@ Si en cualquier momento la señal START se desactiva, el sistema pasa directamen
 ### 6.3 Diagrama de estados
 
 El diagrama de estados del firmware representa las condiciones principales de operación y las transiciones entre ellas. Este diagrama permite visualizar cómo el sistema pasa desde la inicialización hasta la operación normal, y cómo responde ante condiciones de espera, calibración, pérdida temporal de línea o parada segura.
-![Diagrama de Estados](...assets/img/EstadosFirmware.png)
+![Diagrama de Estados](../assets/img/EstadosFirmware.png)
 
 ## 7. Manejo de errores y seguridad
 
