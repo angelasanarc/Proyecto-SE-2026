@@ -59,3 +59,19 @@ bool qtr_calibration_is_done(const qtr_calibration_t *cal)
 {
     return cal->calibrated;
 }
+
+bool qtr_calibration_is_valid(const qtr_calibration_t *cal)
+{
+    if (!cal->calibrated) return false;
+
+    int valid = 0;
+    for (int i = 0; i < NUM_SENSORS; i++)
+    {
+        if (cal->max_time[i] > cal->min_time[i] &&
+            (cal->max_time[i] - cal->min_time[i]) >= 300)
+        {
+            valid++;
+        }
+    }
+    return valid >= 6;
+}

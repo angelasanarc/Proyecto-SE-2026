@@ -47,4 +47,10 @@ void qtr_calibration_normalize(
 /* Devuelve true cuando se han recopilado CALIBRATION_SAMPLES muestras. */
 bool qtr_calibration_is_done(const qtr_calibration_t *cal);
 
+/*
+ * Devuelve true si la calibracion es valida: al menos 6 de 8 sensores
+ * tienen un rango min/max suficiente para distinguir blanco de negro.
+ */
+bool qtr_calibration_is_valid(const qtr_calibration_t *cal);
+
 #endif

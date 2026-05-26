@@ -1,11 +1,18 @@
 #ifndef OLED_DISPLAY_H
 #define OLED_DISPLAY_H
 
+#include <stdbool.h>
 #include "esp_err.h"
 #include "line_sensors.h"
 
 esp_err_t oled_display_init(void);
 void      oled_display_clear(void);
+
+/*
+ * Pantalla de arranque: verifica subsistemas y muestra OK/ERR por cada uno.
+ * Llamar una vez antes de la calibracion.
+ */
+void oled_display_show_boot(bool sensors_ok, bool motors_ok, bool start_ok, bool wifi_ok);
 
 /*
  * Pantalla de calibracion activa.
@@ -30,7 +37,8 @@ void oled_display_show_status(
     const line_sensor_data_t *sensor_data,
     int left_speed,
     int right_speed,
-    float correction
+    float correction,
+    int run_count
 );
 
 #endif

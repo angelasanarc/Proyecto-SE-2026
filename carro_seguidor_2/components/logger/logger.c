@@ -28,7 +28,7 @@ void logger_control(
     }
 
     printf(
-        "START=%d | LINE=%d | POS=%d | ERR=%d | CORR=%.2f | L=%d | R=%d | S=%d %d %d %d %d %d %d %d\n",
+        "CTL | START=%d LINE=%d POS=%d ERR=%d CORR=%.2f L=%d R=%d S=%d%d%d%d%d%d%d%d\n",
         start_active,
         sensor_data->line_detected,
         sensor_data->position,
@@ -45,4 +45,14 @@ void logger_control(
         sensor_data->detected[6],
         sensor_data->detected[7]
     );
+}
+
+void logger_run_start(int run)
+{
+    printf("RUN_START | run=%d\n", run);
+}
+
+void logger_run_end(int run)
+{
+    printf("RUN_END | run=%d\n", run);
 }

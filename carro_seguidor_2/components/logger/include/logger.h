@@ -16,4 +16,7 @@ void logger_control(
     int start_active
 );
 
+void logger_run_start(int run);
+void logger_run_end(int run);
+
 #endif

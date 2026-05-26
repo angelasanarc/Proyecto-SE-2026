@@ -250,6 +250,43 @@ void oled_display_clear(void)
 }
 
 /* =====================================================================
+ * PANTALLA 0: ARRANQUE — verificacion de subsistemas
+ *
+ *  y= 2  "LINE BOT" scale 2 centrado
+ *  y=19  separador
+ *  y=23  "SENSORES  OK/ERR"
+ *  y=31  "MOTORES   OK/ERR"
+ *  y=39  "INICIO    OK/ERR"
+ *  y=47  "WIFI      OK/ERR"
+ * ===================================================================== */
+void oled_display_show_boot(bool sensors_ok, bool motors_ok, bool start_ok, bool wifi_ok)
+{
+    oled_clear_buffer();
+
+    oled_draw_text_scaled(16, 2, "LINE BOT", 2);
+    oled_hline(0, 127, 19);
+
+    const char *labels[4] = { "SENSORES", "MOTORES ", "INICIO  ", "WIFI    " };
+    bool        ok[4]     = { sensors_ok, motors_ok, start_ok, wifi_ok };
+
+    for (int i = 0; i < 4; i++)
+    {
+        int y = 23 + i * 8;
+        oled_draw_text_scaled(0, y, labels[i], 1);
+        oled_draw_text_scaled(60, y, ok[i] ? "OK" : "ERR", 1);
+        if (!ok[i])
+        {
+            /* pequeño cuadro de alerta junto al ERR */
+            oled_draw_rect(90, y, 7, 7, false);
+            oled_draw_pixel(93, y + 2, true);
+            oled_draw_pixel(93, y + 4, true);
+        }
+    }
+
+    oled_flush();
+}
+
+/* =====================================================================
  * PANTALLA 1: CALIBRANDO
  *
  *  y= 0  "CALIBRANDO" centrado (scale 1)
@@ -352,7 +389,8 @@ void oled_display_show_status(
     const line_sensor_data_t *sensor_data,
     int left_speed,
     int right_speed,
-    float correction
+    float correction,
+    int run_count
 )
 {
     if (sensor_data == NULL) return;
@@ -414,26 +452,17 @@ void oled_display_show_status(
 
     /* ---- Zona C: estado ---- */
 
-    if (motors_on)
     {
-        /* "CORRIENDO": 9 chars × 6px = 54px → x=37 */
-        oled_draw_text_scaled(37, 45, "CORRIENDO", 1);
-    }
-    else if (start_active)
-    {
-        /* boton activo pero sin linea */
-        /* "SIN LINEA": 9 chars × 6px = 54px → x=37 */
-        oled_draw_text_scaled(37, 45, "SIN LINEA", 1);
-    }
-    else
-    {
-        /* "DETENIDO": 8 chars × 6px = 48px → x=40 */
-        oled_draw_text_scaled(40, 45, "DETENIDO", 1);
+        char state[22];
+        const char *label = motors_on ? "CORRIENDO" :
+                            start_active ? "SIN LINEA" : "DETENIDO ";
+        snprintf(state, sizeof(state), "%s R:%d", label, run_count);
+        oled_draw_text_scaled(0, 45, state, 1);
     }
 
     {
         char line2[24];
-        snprintf(line2, sizeof(line2), "P:%d C:%.1f",
+        snprintf(line2, sizeof(line2), "P:%d C:%.0f",
                  sensor_data->position, (double)correction);
         oled_draw_text_scaled(0, 55, line2, 1);
     }

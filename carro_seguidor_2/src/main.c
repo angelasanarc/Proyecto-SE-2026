@@ -17,10 +17,14 @@
 #include "wifi_monitor.h"
 
 /* ---- Display task: pantalla en tarea separada para no bloquear el control ---- */
-typedef enum { DISP_CALIBRATING, DISP_WAITING, DISP_RUNNING } disp_mode_t;
+typedef enum { DISP_BOOT, DISP_CALIBRATING, DISP_WAITING, DISP_RUNNING } disp_mode_t;
 
 typedef struct {
     disp_mode_t        mode;
+    bool               boot_sensors;
+    bool               boot_motors;
+    bool               boot_start;
+    bool               boot_wifi;
     int                cal_norm[NUM_SENSORS];
     int                cal_samples;
     int                start_active;
@@ -28,6 +32,7 @@ typedef struct {
     int                left_speed;
     int                right_speed;
     float              correction;
+    int                run_count;
     line_sensor_data_t sensor_data;
 } disp_state_t;
 
@@ -52,6 +57,10 @@ static void display_task(void *arg)
             xSemaphoreGive(s_disp_mutex);
         }
         switch (st.mode) {
+        case DISP_BOOT:
+            oled_display_show_boot(st.boot_sensors, st.boot_motors,
+                                   st.boot_start, st.boot_wifi);
+            break;
         case DISP_CALIBRATING:
             oled_display_show_calibrating(st.cal_norm, st.cal_samples);
             break;
@@ -62,7 +71,7 @@ static void display_task(void *arg)
             oled_display_show_status(st.start_active, st.motors_on,
                                      &st.sensor_data,
                                      st.left_speed, st.right_speed,
-                                     st.correction);
+                                     st.correction, st.run_count);
             break;
         }
     }
@@ -100,8 +109,10 @@ void app_main(void)
     int   right_speed      = 0;
     float correction       = 0.0f;
     int   start_active     = 0;
+    int   prev_start       = 0;
     int   motors_on        = 0;
     int   lost_line_cycles = 0;
+    int   run_count        = 0;
 
     /* ---- Inicializacion ---- */
     logger_init();
@@ -110,16 +121,42 @@ void app_main(void)
     s_disp_mutex = xSemaphoreCreateMutex();
     memset(&s_disp, 0, sizeof(s_disp));
 
+    /* Tarea de pantalla arranca inmediatamente para que la OLED prenda */
     oled_display_init();
-    wifi_monitor_init();
+    xTaskCreatePinnedToCore(display_task, "display", 2048, NULL, 1, NULL, 1);
 
-    line_sensors_init();
-    start_input_init();
-    motor_driver_init();
+    bool sensors_ok = (line_sensors_init()  == ESP_OK);
+    bool motors_ok  = (motor_driver_init()  == ESP_OK);
+    bool start_ok   = (start_input_init()   == ESP_OK);
+    bool wifi_ok    = (wifi_monitor_init()  == ESP_OK);
+
     motor_driver_stop();
 
-    /* Tarea de pantalla en core 1, prioridad baja */
-    xTaskCreatePinnedToCore(display_task, "display", 2048, NULL, 1, NULL, 1);
+    if (!sensors_ok) logger_system("ERROR: sensores no inicializados");
+    if (!motors_ok)  logger_system("ERROR: motores no inicializados");
+    if (!start_ok)   logger_system("ERROR: boton START no inicializado");
+    if (!wifi_ok)    logger_system("WARN: WiFi no disponible");
+
+    /* Mostrar estado de boot en pantalla */
+    {
+        disp_state_t d = {
+            .mode         = DISP_BOOT,
+            .boot_sensors = sensors_ok,
+            .boot_motors  = motors_ok,
+            .boot_start   = start_ok,
+            .boot_wifi    = wifi_ok,
+        };
+        disp_set(&d);
+    }
+
+    vTaskDelay(pdMS_TO_TICKS(2000));
+
+    /* Bloquear si subsistemas criticos fallaron (pantalla sigue mostrando el error) */
+    if (!sensors_ok || !motors_ok || !start_ok)
+    {
+        logger_system("FALLA CRITICA — sistema detenido");
+        while (1) vTaskDelay(pdMS_TO_TICKS(1000));
+    }
 
     /* Cargar parametros desde NVS */
     robot_params_t params;
@@ -159,6 +196,11 @@ void app_main(void)
 
         vTaskDelay(pdMS_TO_TICKS(CONTROL_PERIOD_MS));
     }
+
+    if (qtr_calibration_is_valid(&calibration))
+        logger_system("Calibracion valida (>=6 sensores con rango correcto)");
+    else
+        logger_system("WARN: calibracion debil (<6 sensores con rango suficiente)");
 
     logger_system("Calibracion completa - esperando START");
     {
@@ -211,6 +253,18 @@ void app_main(void)
 
         start_active = start_input_is_active() ? 1 : 0;
 
+        /* Detectar flanco start inactivo→activo para contar recorridos */
+        if (!prev_start && start_active)
+        {
+            run_count++;
+            logger_run_start(run_count);
+        }
+        else if (prev_start && !start_active)
+        {
+            logger_run_end(run_count);
+        }
+        prev_start = start_active;
+
         if (!start_active)
         {
             left_speed       = 0;
@@ -260,6 +314,7 @@ void app_main(void)
                 .left_speed  = left_speed,
                 .right_speed = right_speed,
                 .correction  = correction,
+                .run_count   = run_count,
                 .sensor_data = sensor_data,
             };
             disp_set(&d);

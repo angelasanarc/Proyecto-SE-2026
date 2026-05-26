@@ -97,6 +97,16 @@ canvas{display:block;width:100%;border-radius:3px}
   <div class="cbox"><h3>Sensores Activos</h3><canvas id="csens"></canvas></div>
 </div>
 
+<div class="pbox" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px">
+  <div style="font-size:10px;color:#64748b;text-transform:uppercase;letter-spacing:1px">
+    Exportar datos &nbsp;<span id="csvcount" style="color:#475569">(0 puntos)</span>
+  </div>
+  <div style="display:flex;gap:6px">
+    <button class="btn bg" onclick="downloadCSV()">Descargar CSV</button>
+    <button class="btn bs" onclick="clearLog()">Limpiar</button>
+  </div>
+</div>
+
 <div class="info">
   Broker: broker.hivemq.com &nbsp;|&nbsp;
   Tópico: se2026/robot/telem &nbsp;|&nbsp;
@@ -104,9 +114,45 @@ canvas{display:block;width:100%;border-radius:3px}
 </div>
 
 <script>
-var NS = 8, WIN = 150;
+var NS = 8, WIN = 150, LOG_MAX = 5000;
 var DEFAULTS = { kp: 0.15, ki: 0.05, kd: 0.001, speed: 140 };
 var TELEM_TOPIC = 'se2026/robot/telem';
+
+// ---- CSV log ----
+var csvLog = [];
+var csvT0  = null;
+
+function logPoint(d) {
+  var now = Date.now();
+  if (csvT0 === null) csvT0 = now;
+  var row = [(now - csvT0) / 1000, d.err, d.pos, d.lspd, d.rspd,
+             d.corr.toFixed(3), d.line ? 1 : 0, d.mot ? 1 : 0, d.start ? 1 : 0]
+            .concat(d.sens);
+  csvLog.push(row);
+  if (csvLog.length > LOG_MAX) csvLog.shift();
+  document.getElementById('csvcount').textContent = '(' + csvLog.length + ' puntos)';
+}
+
+function downloadCSV() {
+  if (!csvLog.length) { alert('Sin datos aún'); return; }
+  var hdr = 't_s,err,pos,lspd,rspd,corr,line,mot,start';
+  for (var i = 0; i < NS; i++) hdr += ',s' + i;
+  var lines = [hdr];
+  csvLog.forEach(function(r) { lines.push(r.join(',')); });
+  var blob = new Blob([lines.join('\r\n')], { type: 'text/csv' });
+  var url  = URL.createObjectURL(blob);
+  var a    = document.createElement('a');
+  var ts   = new Date().toISOString().slice(0,19).replace(/[T:]/g,'-');
+  a.href   = url;
+  a.download = 'robot_' + ts + '.csv';
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+function clearLog() {
+  csvLog = []; csvT0 = null;
+  document.getElementById('csvcount').textContent = '(0 puntos)';
+}
 var CMD_TOPIC   = 'se2026/robot/cmd';
 
 // ---- Sensor bars ----
@@ -207,6 +253,7 @@ function onData(d) {
   cSpd.push(d.lspd, d.rspd);
   cPos.push(d.pos);
   cSens.push(active);
+  logPoint(d);
   loadParamsOnce(d);
 }
 
