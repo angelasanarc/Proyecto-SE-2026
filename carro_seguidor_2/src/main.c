@@ -123,7 +123,7 @@ void app_main(void)
 
     /* Tarea de pantalla arranca inmediatamente para que la OLED prenda */
     oled_display_init();
-    xTaskCreatePinnedToCore(display_task, "display", 2048, NULL, 1, NULL, 1);
+    xTaskCreatePinnedToCore(display_task, "display", 4096, NULL, 1, NULL, 1);
 
     bool sensors_ok = (line_sensors_init()  == ESP_OK);
     bool motors_ok  = (motor_driver_init()  == ESP_OK);

@@ -216,25 +216,34 @@ esp_err_t wifi_monitor_init(void)
     /* NVS */
     esp_err_t ret = nvs_flash_init();
     if (ret == ESP_ERR_NVS_NO_FREE_PAGES || ret == ESP_ERR_NVS_NEW_VERSION_FOUND) {
-        ESP_ERROR_CHECK(nvs_flash_erase());
+        ret = nvs_flash_erase();
+        if (ret != ESP_OK) return ret;
         ret = nvs_flash_init();
     }
-    ESP_ERROR_CHECK(ret);
+    if (ret != ESP_OK) return ret;
     nvs_load_params(&s_params);
     s_params_changed = false;
 
     /* WiFi STA */
-    ESP_ERROR_CHECK(esp_netif_init());
-    ESP_ERROR_CHECK(esp_event_loop_create_default());
+    ret = esp_netif_init();
+    if (ret != ESP_OK) return ret;
+
+    ret = esp_event_loop_create_default();
+    if (ret != ESP_OK) return ret;
+
     esp_netif_create_default_wifi_sta();
 
     wifi_init_config_t wifi_cfg = WIFI_INIT_CONFIG_DEFAULT();
-    ESP_ERROR_CHECK(esp_wifi_init(&wifi_cfg));
+    ret = esp_wifi_init(&wifi_cfg);
+    if (ret != ESP_OK) return ret;
 
-    ESP_ERROR_CHECK(esp_event_handler_instance_register(
-        WIFI_EVENT, ESP_EVENT_ANY_ID, wifi_event_handler, NULL, NULL));
-    ESP_ERROR_CHECK(esp_event_handler_instance_register(
-        IP_EVENT, IP_EVENT_STA_GOT_IP, wifi_event_handler, NULL, NULL));
+    ret = esp_event_handler_instance_register(
+        WIFI_EVENT, ESP_EVENT_ANY_ID, wifi_event_handler, NULL, NULL);
+    if (ret != ESP_OK) return ret;
+
+    ret = esp_event_handler_instance_register(
+        IP_EVENT, IP_EVENT_STA_GOT_IP, wifi_event_handler, NULL, NULL);
+    if (ret != ESP_OK) return ret;
 
     wifi_config_t sta_cfg = {0};
     strncpy((char *)sta_cfg.sta.ssid,     STA_WIFI_SSID,
@@ -242,13 +251,23 @@ esp_err_t wifi_monitor_init(void)
     strncpy((char *)sta_cfg.sta.password, STA_WIFI_PASSWORD,
             sizeof(sta_cfg.sta.password) - 1);
 
-    ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_STA));
-    ESP_ERROR_CHECK(esp_wifi_set_config(WIFI_IF_STA, &sta_cfg));
-    ESP_ERROR_CHECK(esp_wifi_start());
+    ret = esp_wifi_set_mode(WIFI_MODE_STA);
+    if (ret != ESP_OK) return ret;
+
+    ret = esp_wifi_set_config(WIFI_IF_STA, &sta_cfg);
+    if (ret != ESP_OK) return ret;
+
+    ret = esp_wifi_start();
+    if (ret != ESP_OK) return ret;
 
     ESP_LOGI(TAG, "Conectando a WiFi SSID=%s ...", STA_WIFI_SSID);
-    xEventGroupWaitBits(s_wifi_eg, WIFI_GOT_IP_BIT,
-                        pdFALSE, pdTRUE, pdMS_TO_TICKS(15000));
+    EventBits_t bits = xEventGroupWaitBits(s_wifi_eg, WIFI_GOT_IP_BIT,
+                                           pdFALSE, pdTRUE, pdMS_TO_TICKS(15000));
+
+    if (!(bits & WIFI_GOT_IP_BIT)) {
+        ESP_LOGW(TAG, "WiFi sin IP tras 15s — continuando sin red");
+        return ESP_FAIL;
+    }
 
     /* MQTT — ID unico por dispositivo usando MAC */
     uint8_t mac[6];
