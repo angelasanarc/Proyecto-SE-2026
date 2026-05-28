@@ -218,6 +218,9 @@ esp_err_t oled_display_init(void)
     esp_err_t ret = i2c_new_master_bus(&bus_cfg, &s_bus);
     if (ret != ESP_OK) { oled_present = false; return ret; }
 
+    /* Liberar bus I2C si quedo trabado por reset en caliente (SDA stuck low) */
+    i2c_master_bus_reset(s_bus);
+
     i2c_device_config_t dev_cfg = {
         .dev_addr_length = I2C_ADDR_BIT_LEN_7,
         .device_address  = OLED_ADDR,
