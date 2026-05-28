@@ -38,7 +38,7 @@ h1{font-size:13px;letter-spacing:2px;color:#3b82f6}
 .prow input[type=range]{width:100%;accent-color:#3b82f6;margin-top:2px}
 .pact{display:flex;gap:6px;margin-top:10px;align-items:center}
 .btn{padding:4px 10px;border:none;border-radius:4px;cursor:pointer;font-size:12px;font-family:monospace}
-.bg{background:#22c55e;color:#0f172a}.bs{background:#334155;color:#94a3b8}
+.bg{background:#22c55e;color:#0f172a}.bs{background:#334155;color:#94a3b8}.br{background:#7f1d1d;color:#fca5a5}
 #psaved{font-size:10px;color:#22c55e;transition:opacity .5s}
 .charts{display:grid;grid-template-columns:1fr 1fr;gap:6px;padding:0 16px 20px}
 @media(max-width:600px){.charts{grid-template-columns:1fr}}
@@ -46,6 +46,14 @@ h1{font-size:13px;letter-spacing:2px;color:#3b82f6}
 .cbox h3{font-size:9px;color:#64748b;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px}
 canvas{display:block;width:100%;border-radius:3px}
 .info{font-size:10px;color:#475569;padding:4px 16px 12px;line-height:1.6}
+/* Historial */
+.hlist{max-height:260px;overflow-y:auto;margin-top:8px;display:flex;flex-direction:column;gap:2px}
+.hlist::-webkit-scrollbar{width:4px}.hlist::-webkit-scrollbar-thumb{background:#334155;border-radius:2px}
+.hentry{display:flex;gap:8px;padding:4px 6px;border-radius:4px;font-size:11px;line-height:1.4}
+.hentry.sys{background:#1e3a5f}.hentry.run_start{background:#14532d}.hentry.run_end{background:#431407}
+.hts{color:#64748b;white-space:nowrap;font-size:10px;min-width:80px}
+.hmsg{color:#e2e8f0;word-break:break-all}
+.hempty{color:#475569;font-size:11px;padding:8px 0;text-align:center}
 </style>
 </head>
 <body>
@@ -107,6 +115,20 @@ canvas{display:block;width:100%;border-radius:3px}
   </div>
 </div>
 
+<!-- Historial de eventos -->
+<div class="pbox">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
+    <div class="ptit" style="margin-bottom:0">
+      Historial de eventos
+      <span id="hcount" style="color:#475569;font-size:10px">(0)</span>
+    </div>
+    <button class="btn br" onclick="clearHistory()">Borrar historial</button>
+  </div>
+  <div class="hlist" id="hlist">
+    <div class="hempty" id="hempty">Sin eventos registrados</div>
+  </div>
+</div>
+
 <div class="info">
   Broker: broker.hivemq.com &nbsp;|&nbsp;
   Tópico: se2026/robot/telem &nbsp;|&nbsp;
@@ -117,6 +139,70 @@ canvas{display:block;width:100%;border-radius:3px}
 var NS = 8, WIN = 150, LOG_MAX = 5000;
 var DEFAULTS = { kp: 0.15, ki: 0.05, kd: 0.001, speed: 140 };
 var TELEM_TOPIC = 'se2026/robot/telem';
+var CMD_TOPIC   = 'se2026/robot/cmd';
+var LOG_TOPIC   = 'se2026/robot/log';
+var HISTORY_KEY = 'robotHistory';
+var HISTORY_MAX = 500;
+
+// ---- Historial persistente (localStorage) ----
+var history = [];
+
+function historyLoad() {
+  try {
+    var raw = localStorage.getItem(HISTORY_KEY);
+    if (raw) history = JSON.parse(raw);
+    if (!Array.isArray(history)) history = [];
+  } catch(_) { history = []; }
+}
+
+function historySave() {
+  try { localStorage.setItem(HISTORY_KEY, JSON.stringify(history)); } catch(_) {}
+}
+
+function historyAdd(msg) {
+  var now = new Date();
+  var wall = now.toLocaleDateString('es-CO') + ' ' +
+             now.toTimeString().slice(0, 8);
+  history.push({ wall: wall, msg: msg });
+  if (history.length > HISTORY_MAX) history.shift();
+  historySave();
+  historyRender();
+}
+
+function clearHistory() {
+  if (!confirm('¿Borrar todo el historial?')) return;
+  history = [];
+  historySave();
+  historyRender();
+}
+
+function entryClass(msg) {
+  if (msg.indexOf('RUN_START') !== -1) return 'hentry run_start';
+  if (msg.indexOf('RUN_END')   !== -1) return 'hentry run_end';
+  return 'hentry sys';
+}
+
+function historyRender() {
+  var list = document.getElementById('hlist');
+  var empty = document.getElementById('hempty');
+  document.getElementById('hcount').textContent = '(' + history.length + ')';
+  if (!history.length) {
+    list.innerHTML = '';
+    list.appendChild(empty);
+    empty.style.display = '';
+    return;
+  }
+  empty.style.display = 'none';
+  var html = '';
+  for (var i = history.length - 1; i >= 0; i--) {
+    var e = history[i];
+    html += '<div class="' + entryClass(e.msg) + '">' +
+            '<span class="hts">' + e.wall + '</span>' +
+            '<span class="hmsg">' + e.msg + '</span>' +
+            '</div>';
+  }
+  list.innerHTML = html;
+}
 
 // ---- CSV log ----
 var csvLog = [];
@@ -153,7 +239,6 @@ function clearLog() {
   csvLog = []; csvT0 = null;
   document.getElementById('csvcount').textContent = '(0 puntos)';
 }
-var CMD_TOPIC   = 'se2026/robot/cmd';
 
 // ---- Sensor bars ----
 var sbEl = document.getElementById('sbars'), snEl = document.getElementById('snums');
@@ -298,6 +383,7 @@ function mqttConnect() {
     dot.className = 'dot on';
     stxt.textContent = 'Conectado al broker — esperando robot...';
     client.subscribe(TELEM_TOPIC);
+    client.subscribe(LOG_TOPIC);
   });
 
   client.on('reconnect', function() {
@@ -312,9 +398,14 @@ function mqttConnect() {
   });
 
   client.on('message', function(topic, message) {
+    var txt = message.toString();
+    if (topic === LOG_TOPIC) {
+      historyAdd(txt);
+      return;
+    }
     if (topic !== TELEM_TOPIC) return;
     try {
-      var d = JSON.parse(message.toString());
+      var d = JSON.parse(txt);
       dot.className = 'dot on';
       stxt.textContent = 'Robot conectado — recibiendo datos';
       onData(d);
@@ -322,6 +413,9 @@ function mqttConnect() {
   });
 }
 
+// ---- Init ----
+historyLoad();
+historyRender();
 mqttConnect();
 </script>
 </body>

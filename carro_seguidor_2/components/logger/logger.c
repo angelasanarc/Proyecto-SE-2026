@@ -5,6 +5,8 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 
+static void (*s_publish_fn)(const char *) = NULL;
+
 static void fmt_ts(char *buf, size_t sz)
 {
     uint32_t ms  = (uint32_t)(xTaskGetTickCount() * portTICK_PERIOD_MS);
@@ -14,6 +16,11 @@ static void fmt_ts(char *buf, size_t sz)
     uint32_t sec = s % 60;
     snprintf(buf, sz, "%02lu:%02lu:%02lu", (unsigned long)h,
              (unsigned long)m, (unsigned long)sec);
+}
+
+void logger_set_publish_fn(void (*fn)(const char *))
+{
+    s_publish_fn = fn;
 }
 
 esp_err_t logger_init(void)
@@ -28,7 +35,10 @@ void logger_system(const char *message)
 {
     char ts[12];
     fmt_ts(ts, sizeof(ts));
-    printf("%s SYS | %s\n", ts, message);
+    char line[160];
+    snprintf(line, sizeof(line), "%s SYS | %s", ts, message);
+    printf("%s\n", line);
+    if (s_publish_fn) s_publish_fn(line);
 }
 
 void logger_control(
@@ -68,12 +78,18 @@ void logger_run_start(int run)
 {
     char ts[12];
     fmt_ts(ts, sizeof(ts));
-    printf("%s RUN_START | run=%d\n", ts, run);
+    char line[64];
+    snprintf(line, sizeof(line), "%s RUN_START | run=%d", ts, run);
+    printf("%s\n", line);
+    if (s_publish_fn) s_publish_fn(line);
 }
 
 void logger_run_end(int run)
 {
     char ts[12];
     fmt_ts(ts, sizeof(ts));
-    printf("%s RUN_END | run=%d\n", ts, run);
+    char line[64];
+    snprintf(line, sizeof(line), "%s RUN_END | run=%d", ts, run);
+    printf("%s\n", line);
+    if (s_publish_fn) s_publish_fn(line);
 }

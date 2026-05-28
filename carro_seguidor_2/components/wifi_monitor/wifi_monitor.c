@@ -319,3 +319,9 @@ bool wifi_monitor_params_changed(robot_params_t *out)
     xSemaphoreGive(s_params_mutex);
     return changed;
 }
+
+void wifi_monitor_publish_log(const char *msg)
+{
+    if (!s_mqtt_connected || !msg) return;
+    esp_mqtt_client_publish(s_mqtt, MQTT_LOG_TOPIC, msg, 0, 0, 0);
+}

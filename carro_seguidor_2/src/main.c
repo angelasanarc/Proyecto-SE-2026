@@ -147,6 +147,8 @@ void app_main(void)
 
     bool wifi_ok = (wifi_monitor_init()  == ESP_OK);
 
+    if (wifi_ok) logger_set_publish_fn(wifi_monitor_publish_log);
+
     motor_driver_stop();
 
     if (!wifi_ok) logger_system("WARN: WiFi no disponible");

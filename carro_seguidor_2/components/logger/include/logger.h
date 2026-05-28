@@ -5,6 +5,7 @@
 #include "line_sensors.h"
 
 esp_err_t logger_init(void);
+void      logger_set_publish_fn(void (*fn)(const char *));
 
 void logger_system(const char *message);
 

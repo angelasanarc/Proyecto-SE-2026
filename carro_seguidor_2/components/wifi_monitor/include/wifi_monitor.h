@@ -28,5 +28,6 @@ esp_err_t wifi_monitor_init(void);
 void      wifi_monitor_update(const robot_telemetry_t *telem);
 void      wifi_monitor_get_params(robot_params_t *out);
 bool      wifi_monitor_params_changed(robot_params_t *out);
+void      wifi_monitor_publish_log(const char *msg);
 
 #endif
