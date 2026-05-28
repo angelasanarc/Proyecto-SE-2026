@@ -92,7 +92,7 @@ static void oled_try_recover(void)
     oled_present = true;
     for (int i = 0; i < (int)sizeof(init_cmds); i++) {
         uint8_t buf[2] = { 0x00, init_cmds[i] };
-        if (i2c_master_transmit(s_dev, buf, 2, 8) != ESP_OK) {
+        if (i2c_master_transmit(s_dev, buf, 2, 100) != ESP_OK) {
             oled_present = false;
             oled_failed_at = xTaskGetTickCount();
             return;
@@ -115,9 +115,12 @@ static esp_err_t oled_send(uint8_t control, const uint8_t *data, size_t len)
         buffer[0] = control;
         memcpy(&buffer[1], &data[offset], chunk);
 
-        esp_err_t ret = i2c_master_transmit(s_dev, buffer, chunk + 1, 8);
+        esp_err_t ret = i2c_master_transmit(s_dev, buffer, chunk + 1, 100);
 
-        if (ret != ESP_OK) { oled_present = false; oled_failed_at = xTaskGetTickCount(); return ret; }
+        if (ret != ESP_OK) {
+            ESP_LOGE(OTAG, "transmit err=0x%x ctrl=0x%02x", ret, buffer[0]);
+            oled_present = false; oled_failed_at = xTaskGetTickCount(); return ret;
+        }
         offset += chunk;
     }
     return ESP_OK;
