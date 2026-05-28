@@ -9,6 +9,7 @@
 
 #include "driver/i2c_master.h"
 #include "driver/gpio.h"
+#include "esp_rom_sys.h"
 
 #include "robot_config.h"
 
@@ -76,6 +77,41 @@ static const uint8_t *get_glyph(char c)
         if (font_chars[i] == c) return font_5x7[i];
     }
     return font_5x7[0];
+}
+
+/* Recuperacion I2C por bit-bang: libera SDA atascado tras reset en caliente.
+ * Opera directamente sobre GPIO, sin usar el periferico I2C. */
+static void i2c_bus_recover(void)
+{
+    gpio_config_t cfg = {
+        .pin_bit_mask = (1ULL << PIN_OLED_SDA) | (1ULL << PIN_OLED_SCL),
+        .mode         = GPIO_MODE_INPUT_OUTPUT_OD,
+        .pull_up_en   = GPIO_PULLUP_ENABLE,
+        .pull_down_en = GPIO_PULLDOWN_DISABLE,
+        .intr_type    = GPIO_INTR_DISABLE,
+    };
+    gpio_config(&cfg);
+    gpio_set_level(PIN_OLED_SCL, 1);
+    gpio_set_level(PIN_OLED_SDA, 1);
+    esp_rom_delay_us(10);
+
+    for (int i = 0; i < 9; i++) {
+        if (gpio_get_level(PIN_OLED_SDA)) break;
+        gpio_set_level(PIN_OLED_SCL, 0);
+        esp_rom_delay_us(5);
+        gpio_set_level(PIN_OLED_SCL, 1);
+        esp_rom_delay_us(5);
+    }
+    /* condicion STOP */
+    gpio_set_level(PIN_OLED_SDA, 0);
+    esp_rom_delay_us(5);
+    gpio_set_level(PIN_OLED_SCL, 1);
+    esp_rom_delay_us(5);
+    gpio_set_level(PIN_OLED_SDA, 1);
+    esp_rom_delay_us(5);
+
+    gpio_reset_pin(PIN_OLED_SDA);
+    gpio_reset_pin(PIN_OLED_SCL);
 }
 
 static void oled_try_recover(void)
@@ -216,15 +252,11 @@ esp_err_t oled_display_init(void)
         .flags.enable_internal_pullup = true,
     };
 
-    /* Liberar pines del GPIO matrix antes de crear el bus (warm-reset deja GPIOs asignados) */
-    gpio_reset_pin(PIN_OLED_SDA);
-    gpio_reset_pin(PIN_OLED_SCL);
+    /* Bit-bang recovery: libera SDA/SCL antes de que el driver I2C tome control */
+    i2c_bus_recover();
 
     esp_err_t ret = i2c_new_master_bus(&bus_cfg, &s_bus);
     if (ret != ESP_OK) { oled_present = false; return ret; }
-
-    /* Liberar bus I2C si quedo trabado por reset en caliente (SDA stuck low) */
-    i2c_master_bus_reset(s_bus);
 
     i2c_device_config_t dev_cfg = {
         .dev_addr_length = I2C_ADDR_BIT_LEN_7,
