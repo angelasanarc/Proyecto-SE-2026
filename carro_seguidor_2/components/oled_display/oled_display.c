@@ -8,10 +8,8 @@
 #include "freertos/task.h"
 
 #include "driver/i2c_master.h"
-#include "esp_log.h"
 
 #include "robot_config.h"
-static const char *OTAG = "OLED";
 
 static bool                    oled_present = true;
 static uint8_t                 oled_buffer[128 * 8];
@@ -118,7 +116,6 @@ static esp_err_t oled_send(uint8_t control, const uint8_t *data, size_t len)
         esp_err_t ret = i2c_master_transmit(s_dev, buffer, chunk + 1, 100);
 
         if (ret != ESP_OK) {
-            ESP_LOGE(OTAG, "transmit err=0x%x ctrl=0x%02x", ret, buffer[0]);
             oled_present = false; oled_failed_at = xTaskGetTickCount(); return ret;
         }
         offset += chunk;
@@ -222,14 +219,6 @@ esp_err_t oled_display_init(void)
 
     esp_err_t ret = i2c_new_master_bus(&bus_cfg, &s_bus);
     if (ret != ESP_OK) { oled_present = false; return ret; }
-
-    /* Diagnostico: buscar dispositivo en 0x3C y 0x3D */
-    bool found_3c = (i2c_master_probe(s_bus, 0x3C, 50) == ESP_OK);
-    bool found_3d = (i2c_master_probe(s_bus, 0x3D, 50) == ESP_OK);
-    ESP_LOGI(OTAG, "scan: 0x3C=%s 0x3D=%s",
-             found_3c ? "ACK" : "---", found_3d ? "ACK" : "---");
-    if (!found_3c && !found_3d)
-        ESP_LOGE(OTAG, "OLED no responde — verificar VCC/GND/SDA/SCL");
 
     i2c_device_config_t dev_cfg = {
         .dev_addr_length = I2C_ADDR_BIT_LEN_7,
