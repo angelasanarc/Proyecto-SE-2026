@@ -128,16 +128,30 @@ void app_main(void)
     bool sensors_ok = (line_sensors_init()  == ESP_OK);
     bool motors_ok  = (motor_driver_init()  == ESP_OK);
     bool start_ok   = (start_input_init()   == ESP_OK);
-    bool wifi_ok    = (wifi_monitor_init()  == ESP_OK);
-
-    motor_driver_stop();
 
     if (!sensors_ok) logger_system("ERROR: sensores no inicializados");
     if (!motors_ok)  logger_system("ERROR: motores no inicializados");
     if (!start_ok)   logger_system("ERROR: boton START no inicializado");
-    if (!wifi_ok)    logger_system("WARN: WiFi no disponible");
 
-    /* Mostrar estado de boot en pantalla */
+    /* Mostrar estado de subsistemas criticos inmediatamente (WiFi aun pendiente) */
+    {
+        disp_state_t d = {
+            .mode         = DISP_BOOT,
+            .boot_sensors = sensors_ok,
+            .boot_motors  = motors_ok,
+            .boot_start   = start_ok,
+            .boot_wifi    = false,
+        };
+        disp_set(&d);
+    }
+
+    bool wifi_ok = (wifi_monitor_init()  == ESP_OK);
+
+    motor_driver_stop();
+
+    if (!wifi_ok) logger_system("WARN: WiFi no disponible");
+
+    /* Actualizar estado de WiFi en pantalla */
     {
         disp_state_t d = {
             .mode         = DISP_BOOT,
