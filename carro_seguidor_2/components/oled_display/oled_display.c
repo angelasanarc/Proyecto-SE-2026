@@ -10,8 +10,11 @@
 #include "driver/i2c_master.h"
 #include "driver/gpio.h"
 #include "esp_rom_sys.h"
+#include "esp_log.h"
 
 #include "robot_config.h"
+
+static const char *OTAG = "OLED";
 
 static bool                    oled_present = true;
 static uint8_t                 oled_buffer[128 * 8];
@@ -258,16 +261,27 @@ esp_err_t oled_display_init(void)
     esp_err_t ret = i2c_new_master_bus(&bus_cfg, &s_bus);
     if (ret != ESP_OK) { oled_present = false; return ret; }
 
+    /* Escaneo diagnostico: busca cualquier dispositivo I2C en el bus */
+    ESP_LOGI(OTAG, "Escaneando bus I2C (SDA=%d SCL=%d)...", PIN_OLED_SDA, PIN_OLED_SCL);
+    int found = 0;
+    for (int addr = 0x08; addr < 0x78; addr++) {
+        if (i2c_master_probe(s_bus, addr, 10) == ESP_OK) {
+            ESP_LOGI(OTAG, "  dispositivo encontrado: 0x%02X", addr);
+            found++;
+        }
+    }
+    if (!found) ESP_LOGE(OTAG, "  NINGUNO — verificar conexiones y alimentacion");
+
     i2c_device_config_t dev_cfg = {
         .dev_addr_length = I2C_ADDR_BIT_LEN_7,
         .device_address  = OLED_ADDR,
-        .scl_speed_hz    = 400000,
+        .scl_speed_hz    = 100000,
     };
 
     ret = i2c_master_bus_add_device(s_bus, &dev_cfg, &s_dev);
     if (ret != ESP_OK) { oled_present = false; return ret; }
 
-    vTaskDelay(pdMS_TO_TICKS(100));
+    vTaskDelay(pdMS_TO_TICKS(200));
 
     uint8_t init_cmds[] = {
         0xAE, 0x20, 0x02, 0xB0, 0xC8, 0x00, 0x10, 0x40,
