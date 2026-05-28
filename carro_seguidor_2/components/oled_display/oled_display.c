@@ -8,13 +8,8 @@
 #include "freertos/task.h"
 
 #include "driver/i2c_master.h"
-#include "driver/gpio.h"
-#include "esp_rom_sys.h"
-#include "esp_log.h"
 
 #include "robot_config.h"
-
-static const char *OTAG = "OLED";
 
 static bool                    oled_present = true;
 static uint8_t                 oled_buffer[128 * 8];
@@ -80,41 +75,6 @@ static const uint8_t *get_glyph(char c)
         if (font_chars[i] == c) return font_5x7[i];
     }
     return font_5x7[0];
-}
-
-/* Recuperacion I2C por bit-bang: libera SDA atascado tras reset en caliente.
- * Opera directamente sobre GPIO, sin usar el periferico I2C. */
-static void i2c_bus_recover(void)
-{
-    gpio_config_t cfg = {
-        .pin_bit_mask = (1ULL << PIN_OLED_SDA) | (1ULL << PIN_OLED_SCL),
-        .mode         = GPIO_MODE_INPUT_OUTPUT_OD,
-        .pull_up_en   = GPIO_PULLUP_ENABLE,
-        .pull_down_en = GPIO_PULLDOWN_DISABLE,
-        .intr_type    = GPIO_INTR_DISABLE,
-    };
-    gpio_config(&cfg);
-    gpio_set_level(PIN_OLED_SCL, 1);
-    gpio_set_level(PIN_OLED_SDA, 1);
-    esp_rom_delay_us(10);
-
-    for (int i = 0; i < 9; i++) {
-        if (gpio_get_level(PIN_OLED_SDA)) break;
-        gpio_set_level(PIN_OLED_SCL, 0);
-        esp_rom_delay_us(5);
-        gpio_set_level(PIN_OLED_SCL, 1);
-        esp_rom_delay_us(5);
-    }
-    /* condicion STOP */
-    gpio_set_level(PIN_OLED_SDA, 0);
-    esp_rom_delay_us(5);
-    gpio_set_level(PIN_OLED_SCL, 1);
-    esp_rom_delay_us(5);
-    gpio_set_level(PIN_OLED_SDA, 1);
-    esp_rom_delay_us(5);
-
-    gpio_reset_pin(PIN_OLED_SDA);
-    gpio_reset_pin(PIN_OLED_SCL);
 }
 
 static void oled_try_recover(void)
@@ -255,33 +215,19 @@ esp_err_t oled_display_init(void)
         .flags.enable_internal_pullup = true,
     };
 
-    /* Bit-bang recovery: libera SDA/SCL antes de que el driver I2C tome control */
-    i2c_bus_recover();
-
     esp_err_t ret = i2c_new_master_bus(&bus_cfg, &s_bus);
     if (ret != ESP_OK) { oled_present = false; return ret; }
-
-    /* Escaneo diagnostico: busca cualquier dispositivo I2C en el bus */
-    ESP_LOGI(OTAG, "Escaneando bus I2C (SDA=%d SCL=%d)...", PIN_OLED_SDA, PIN_OLED_SCL);
-    int found = 0;
-    for (int addr = 0x08; addr < 0x78; addr++) {
-        if (i2c_master_probe(s_bus, addr, 10) == ESP_OK) {
-            ESP_LOGI(OTAG, "  dispositivo encontrado: 0x%02X", addr);
-            found++;
-        }
-    }
-    if (!found) ESP_LOGE(OTAG, "  NINGUNO — verificar conexiones y alimentacion");
 
     i2c_device_config_t dev_cfg = {
         .dev_addr_length = I2C_ADDR_BIT_LEN_7,
         .device_address  = OLED_ADDR,
-        .scl_speed_hz    = 100000,
+        .scl_speed_hz    = 400000,
     };
 
     ret = i2c_master_bus_add_device(s_bus, &dev_cfg, &s_dev);
     if (ret != ESP_OK) { oled_present = false; return ret; }
 
-    vTaskDelay(pdMS_TO_TICKS(200));
+    vTaskDelay(pdMS_TO_TICKS(100));
 
     uint8_t init_cmds[] = {
         0xAE, 0x20, 0x02, 0xB0, 0xC8, 0x00, 0x10, 0x40,
