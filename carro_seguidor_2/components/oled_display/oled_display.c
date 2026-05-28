@@ -8,6 +8,7 @@
 #include "freertos/task.h"
 
 #include "driver/i2c_master.h"
+#include "driver/gpio.h"
 
 #include "robot_config.h"
 
@@ -214,6 +215,10 @@ esp_err_t oled_display_init(void)
         .glitch_ignore_cnt   = 7,
         .flags.enable_internal_pullup = true,
     };
+
+    /* Liberar pines del GPIO matrix antes de crear el bus (warm-reset deja GPIOs asignados) */
+    gpio_reset_pin(PIN_OLED_SDA);
+    gpio_reset_pin(PIN_OLED_SCL);
 
     esp_err_t ret = i2c_new_master_bus(&bus_cfg, &s_bus);
     if (ret != ESP_OK) { oled_present = false; return ret; }
