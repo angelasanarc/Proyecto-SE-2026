@@ -130,7 +130,7 @@ canvas{display:block;width:100%;border-radius:3px}
 </div>
 
 <div class="info">
-  Broker: broker.hivemq.com &nbsp;|&nbsp;
+  Broker: broker.emqx.io &nbsp;|&nbsp;
   Tópico: se2026/robot/telem &nbsp;|&nbsp;
   Robot conectado a WiFi local → publica datos en tiempo real.
 </div>
@@ -376,7 +376,7 @@ var dot = document.getElementById('dot'), stxt = document.getElementById('stxt')
 
 function mqttConnect() {
   var cid = 'web_' + Math.random().toString(16).slice(2, 10);
-  client = mqtt.connect('wss://broker.hivemq.com:8884/mqtt', { clientId: cid });
+  client = mqtt.connect('wss://broker.emqx.io:8084/mqtt', { clientId: cid });
 
   client.on('connect', function() {
     mqttReady = true;
@@ -395,6 +395,12 @@ function mqttConnect() {
     mqttReady = false;
     dot.className = 'dot';
     stxt.textContent = 'Sin conexión al broker';
+  });
+
+  client.on('error', function(err) {
+    mqttReady = false;
+    dot.className = 'dot';
+    stxt.textContent = 'Error: ' + err.message;
   });
 
   client.on('message', function(topic, message) {

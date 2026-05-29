@@ -70,7 +70,7 @@
 #endif
 
 /* MQTT */
-#define MQTT_BROKER_URI  "mqtt://broker.hivemq.com:1883"
+#define MQTT_BROKER_URI  "mqtt://broker.emqx.io:1883"
 #define MQTT_TELEM_TOPIC "se2026/robot/telem"
 #define MQTT_CMD_TOPIC   "se2026/robot/cmd"
 #define MQTT_LOG_TOPIC   "se2026/robot/log"
