@@ -152,6 +152,7 @@ function historyLoad() {
     var raw = localStorage.getItem(HISTORY_KEY);
     if (raw) history = JSON.parse(raw);
     if (!Array.isArray(history)) history = [];
+    history = history.filter(function(e) { return e && e.msg; });
   } catch(_) { history = []; }
 }
 
